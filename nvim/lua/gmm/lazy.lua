@@ -23,6 +23,11 @@ require("lazy").setup({
 	{
 		"nvim-treesitter/nvim-treesitter", build = ":TSUpdate"
 	},
+	{
+		"christoomey/vim-tmux-navigator", 
+		lazy=false
+	},
+
 	{"nvim-treesitter/playground"},
 	{'VonHeikemen/lsp-zero.nvim', branch = 'v3.x'},
 	{'williamboman/mason.nvim'},

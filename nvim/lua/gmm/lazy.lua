@@ -77,7 +77,10 @@ require("lazy").setup({
 
   -- Testing
   { "nvim-neotest/neotest", dependencies = { "nvim-lua/plenary.nvim" } },
-  { "nvim-neotest/neotest-junit" },
+  {
+    "mike-deakin/neotest-junit",
+    lazy = false,
+  },
 
   -- Formatting and linting
   { "jose-elias-alvarez/null-ls.nvim", dependencies = { "nvim-lua/plenary.nvim" } },

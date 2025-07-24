@@ -32,6 +32,7 @@ require("lazy").setup({
     "ThePrimeagen/harpoon",
     branch = "harpoon2",
     dependencies = { "nvim-lua/plenary.nvim" },
+    lazy = false,
   },
   {
     "ThePrimeagen/git-worktree.nvim",
@@ -52,6 +53,12 @@ require("lazy").setup({
       "nvim-lua/plenary.nvim",
       "nvim-tree/nvim-web-devicons",
       "MunifTanjim/nui.nvim",
+    },
+    opts = {
+      source_selector = {
+        winbar = false,
+        statusline = false,
+      },
     },
   },
 

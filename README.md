@@ -64,7 +64,7 @@ Most of these rely on `nvim-lua/plenary.nvim`, which is included automatically.
 | **LuaSnip** | `<C-k>` expand or jump in a snippet |
 | **telescope.nvim** | `:Telescope find_files` or `:Telescope live_grep` |
 | **neo-tree.nvim** | `:Neotree toggle` file explorer |
-| **harpoon** | `<leader>a` add file, `<leader>e` menu, `<leader>1-4` navigate |
+| **harpoon** | plugin for quick file navigation |
 | **git-worktree.nvim** | `:lua require('git-worktree').create_worktree()` |
 | **gitsigns.nvim** | `:Gitsigns preview_hunk`, `:Gitsigns blame_line` |
 | **vim-commentary** | `gcc` comment line, `gc` in visual mode |

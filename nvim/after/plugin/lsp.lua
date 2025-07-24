@@ -1,5 +1,13 @@
+-- Ensure mason is initialized before using mason-lspconfig
+require("mason").setup()
+
 local mason_lspconfig = require("mason-lspconfig")
 local lsp = require("gmm.lsp")
+
+-- Install servers automatically when they're configured via lspconfig
+mason_lspconfig.setup({
+    automatic_installation = true,
+})
 
 -- mason-lspconfig versions prior to v2 do not implement `setup_handlers`.
 -- To remain compatible we fall back to manually setting up installed servers

@@ -31,3 +31,23 @@ sudo apt-get install inotify-tools
 # macOS (with Homebrew)
 brew install inotify-tools
 ```
+
+## Neovim setup
+
+These dotfiles include a minimal [lazy.nvim](https://github.com/folke/lazy.nvim) configuration.  The plugin list focuses on Java development and general quality-of-life enhancements.
+
+### Included plugins
+
+- `mason.nvim`, `mason-lspconfig.nvim` and `nvim-lspconfig` for installing and configuring language servers
+- `mfussenegger/nvim-jdtls` for Java LSP support
+- `hrsh7th/nvim-cmp` with buffer, path and LuaSnip completion sources
+- `L3MON4D3/LuaSnip` and `rafamadriz/friendly-snippets` for snippets
+- `nvim-treesitter` with `nvim-treesitter-context`
+- `telescope.nvim` and `neo-tree.nvim` for navigation
+- `nvim-dap`, `nvim-dap-ui` and virtual text (plus the Java debug adapter) for debugging
+- `neotest` with the JUnit adapter
+- `null-ls.nvim` with formatters and linters like `google-java-format` and Checkstyle
+- `harpoon` v2 and `git-worktree.nvim`
+- `gitsigns.nvim`, `vim-commentary` and `vim-sleuth`
+
+Most of these rely on `nvim-lua/plenary.nvim`, which is included automatically.

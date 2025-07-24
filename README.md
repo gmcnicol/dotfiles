@@ -45,7 +45,7 @@ These dotfiles include a minimal [lazy.nvim](https://github.com/folke/lazy.nvim)
 - `hrsh7th/nvim-cmp` with buffer, path and LuaSnip completion sources
 - `L3MON4D3/LuaSnip` and `rafamadriz/friendly-snippets` for snippets
 - `nvim-treesitter` with `nvim-treesitter-context`
-- `telescope.nvim` and `neo-tree.nvim` for navigation
+- `telescope.nvim` and `neo-tree.nvim` for navigation (the panel is disabled by default)
 - `nvim-dap`, `nvim-dap-ui` and virtual text (plus the Java debug adapter) for debugging
 - `neotest` with the JUnit adapter (`mike-deakin/neotest-junit`)
 - `null-ls.nvim` with formatters and linters like `google-java-format` and Checkstyle
@@ -53,6 +53,8 @@ These dotfiles include a minimal [lazy.nvim](https://github.com/folke/lazy.nvim)
 - `gitsigns.nvim`, `vim-commentary` and `vim-sleuth`
 
 Most of these rely on `nvim-lua/plenary.nvim`, which is included automatically.
+LSP support is configured in `nvim/after/plugin/lsp.lua` where `gmm.lsp` is
+required during startup.
 
 ### Plugin cheat sheet
 
@@ -65,7 +67,7 @@ Most of these rely on `nvim-lua/plenary.nvim`, which is included automatically.
 | **nvim-cmp** | `<C-n>/<C-p>` navigate completion menu |
 | **LuaSnip** | `<C-k>` expand or jump in a snippet |
 | **telescope.nvim** | `<leader>pf` files, `<leader>pg` git files, `<leader>ps` grep string, `<leader>pws` grep word |
-| **neo-tree.nvim** | `:Neotree toggle` file explorer |
+| **neo-tree.nvim** | `:Neotree toggle` file explorer (panel disabled) |
 | **harpoon** | `<leader>a` mark, `<C-e>` menu, `<leader>h[1-9]` pick slot, `<C-S-P>/<C-S-N>` cycle |
 | **git-worktree.nvim** | `:lua require('git-worktree').create_worktree()` |
 | **gitsigns.nvim** | `:Gitsigns preview_hunk`, `:Gitsigns blame_line` |

@@ -62,7 +62,7 @@ Most of these rely on `nvim-lua/plenary.nvim`, which is included automatically.
 | **nvim-jdtls** | Java LSP starts automatically; `:JdtCompile` / `:JdtUpdateConfig` for Java projects |
 | **nvim-cmp** | `<C-n>/<C-p>` navigate completion menu |
 | **LuaSnip** | `<C-k>` expand or jump in a snippet |
-| **telescope.nvim** | `:Telescope find_files` or `:Telescope live_grep` |
+| **telescope.nvim** | `<leader>pf` files, `<leader>pg` git files, `<leader>ps` grep string, `<leader>pws` grep word |
 | **neo-tree.nvim** | `:Neotree toggle` file explorer |
 | **harpoon** | plugin for quick file navigation |
 | **git-worktree.nvim** | `:lua require('git-worktree').create_worktree()` |

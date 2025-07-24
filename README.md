@@ -34,6 +34,8 @@ brew install inotify-tools
 
 ## Neovim setup
 
+You need ripgrep installed btw. 
+
 These dotfiles include a minimal [lazy.nvim](https://github.com/folke/lazy.nvim) configuration.  The plugin list focuses on Java development and general quality-of-life enhancements.
 
 ### Included plugins

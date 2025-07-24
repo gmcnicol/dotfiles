@@ -45,7 +45,7 @@ These dotfiles include a minimal [lazy.nvim](https://github.com/folke/lazy.nvim)
 - `nvim-treesitter` with `nvim-treesitter-context`
 - `telescope.nvim` and `neo-tree.nvim` for navigation
 - `nvim-dap`, `nvim-dap-ui` and virtual text (plus the Java debug adapter) for debugging
-- `neotest` with the JUnit adapter
+- `neotest` with the JUnit adapter (`mike-deakin/neotest-junit`)
 - `null-ls.nvim` with formatters and linters like `google-java-format` and Checkstyle
 - `harpoon` v2 and `git-worktree.nvim`
 - `gitsigns.nvim`, `vim-commentary` and `vim-sleuth`

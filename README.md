@@ -58,8 +58,8 @@ Most of these rely on `nvim-lua/plenary.nvim`, which is included automatically.
 | ------ | --------------- |
 | **lazy.nvim** | `:Lazy` opens the plugin manager |
 | **mason.nvim** | `:Mason` shows LSP/DAP installer |
-| **nvim-lspconfig** | `:LspInfo` shows active servers |
-| **nvim-jdtls** | `:JdtCompile` / `:JdtUpdateConfig` for Java projects |
+| **nvim-lspconfig** | `gd`/`gD`/`gi`/`gr` jump around code, `<C-S-f>` formats, `:LspInfo` shows active servers |
+| **nvim-jdtls** | Java LSP starts automatically; `:JdtCompile` / `:JdtUpdateConfig` for Java projects |
 | **nvim-cmp** | `<C-n>/<C-p>` navigate completion menu |
 | **LuaSnip** | `<C-k>` expand or jump in a snippet |
 | **telescope.nvim** | `:Telescope find_files` or `:Telescope live_grep` |

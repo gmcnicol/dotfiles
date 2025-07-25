@@ -1,24 +1,13 @@
 {
-  "title": "Home row modifiers",
+  "title": "Home‑row modifier keys (tap for letter, hold for modifier)",
   "rules": [
     {
-      "description": "Caps Lock -> Escape",
-      "manipulators": [
-        {
-          "type": "basic",
-          "from": { "key_code": "caps_lock", "modifiers": { "optional": ["any"] } },
-          "to": [ { "key_code": "escape" } ]
-        }
-      ]
-    },
-    {
-      "description": "Home row mod keys",
+      "description": "a/s/d/f → ⌘/⌥/⇧/⌃ (left); ;/l/k/j → ⌘/⌥/⇧/⌃ (right)",
       "manipulators": [
         {
           "type": "basic",
           "from": { "key_code": "a", "modifiers": { "optional": ["any"] } },
-          "to": [ { "key_code": "left_command" } ],
-          "to_if_alone": [ { "key_code": "a" } ],
+          "to_if_alone":    [ { "key_code": "a" } ],
           "to_if_held_down": [ { "key_code": "left_command" } ],
           "parameters": {
             "basic.to_if_alone_timeout_milliseconds": 200,
@@ -27,20 +16,8 @@
         },
         {
           "type": "basic",
-          "from": { "key_code": "semicolon", "modifiers": { "optional": ["any"] } },
-          "to": [ { "key_code": "right_command" } ],
-          "to_if_alone": [ { "key_code": "semicolon" } ],
-          "to_if_held_down": [ { "key_code": "right_command" } ],
-          "parameters": {
-            "basic.to_if_alone_timeout_milliseconds": 200,
-            "basic.to_if_held_down_threshold_milliseconds": 200
-          }
-        },
-        {
-          "type": "basic",
           "from": { "key_code": "s", "modifiers": { "optional": ["any"] } },
-          "to": [ { "key_code": "left_option" } ],
-          "to_if_alone": [ { "key_code": "s" } ],
+          "to_if_alone":    [ { "key_code": "s" } ],
           "to_if_held_down": [ { "key_code": "left_option" } ],
           "parameters": {
             "basic.to_if_alone_timeout_milliseconds": 200,
@@ -49,20 +26,8 @@
         },
         {
           "type": "basic",
-          "from": { "key_code": "l", "modifiers": { "optional": ["any"] } },
-          "to": [ { "key_code": "right_option" } ],
-          "to_if_alone": [ { "key_code": "l" } ],
-          "to_if_held_down": [ { "key_code": "right_option" } ],
-          "parameters": {
-            "basic.to_if_alone_timeout_milliseconds": 200,
-            "basic.to_if_held_down_threshold_milliseconds": 200
-          }
-        },
-        {
-          "type": "basic",
           "from": { "key_code": "d", "modifiers": { "optional": ["any"] } },
-          "to": [ { "key_code": "left_shift" } ],
-          "to_if_alone": [ { "key_code": "d" } ],
+          "to_if_alone":    [ { "key_code": "d" } ],
           "to_if_held_down": [ { "key_code": "left_shift" } ],
           "parameters": {
             "basic.to_if_alone_timeout_milliseconds": 200,
@@ -71,20 +36,8 @@
         },
         {
           "type": "basic",
-          "from": { "key_code": "k", "modifiers": { "optional": ["any"] } },
-          "to": [ { "key_code": "right_shift" } ],
-          "to_if_alone": [ { "key_code": "k" } ],
-          "to_if_held_down": [ { "key_code": "right_shift" } ],
-          "parameters": {
-            "basic.to_if_alone_timeout_milliseconds": 200,
-            "basic.to_if_held_down_threshold_milliseconds": 200
-          }
-        },
-        {
-          "type": "basic",
           "from": { "key_code": "f", "modifiers": { "optional": ["any"] } },
-          "to": [ { "key_code": "left_control" } ],
-          "to_if_alone": [ { "key_code": "f" } ],
+          "to_if_alone":    [ { "key_code": "f" } ],
           "to_if_held_down": [ { "key_code": "left_control" } ],
           "parameters": {
             "basic.to_if_alone_timeout_milliseconds": 200,
@@ -93,9 +46,38 @@
         },
         {
           "type": "basic",
+          "from": { "key_code": "semicolon", "modifiers": { "optional": ["any"] } },
+          "to_if_alone":    [ { "key_code": "semicolon" } ],
+          "to_if_held_down": [ { "key_code": "right_command" } ],
+          "parameters": {
+            "basic.to_if_alone_timeout_milliseconds": 200,
+            "basic.to_if_held_down_threshold_milliseconds": 200
+          }
+        },
+        {
+          "type": "basic",
+          "from": { "key_code": "l", "modifiers": { "optional": ["any"] } },
+          "to_if_alone":    [ { "key_code": "l" } ],
+          "to_if_held_down": [ { "key_code": "right_option" } ],
+          "parameters": {
+            "basic.to_if_alone_timeout_milliseconds": 200,
+            "basic.to_if_held_down_threshold_milliseconds": 200
+          }
+        },
+        {
+          "type": "basic",
+          "from": { "key_code": "k", "modifiers": { "optional": ["any"] } },
+          "to_if_alone":    [ { "key_code": "k" } ],
+          "to_if_held_down": [ { "key_code": "right_shift" } ],
+          "parameters": {
+            "basic.to_if_alone_timeout_milliseconds": 200,
+            "basic.to_if_held_down_threshold_milliseconds": 200
+          }
+        },
+        {
+          "type": "basic",
           "from": { "key_code": "j", "modifiers": { "optional": ["any"] } },
-          "to": [ { "key_code": "right_control" } ],
-          "to_if_alone": [ { "key_code": "j" } ],
+          "to_if_alone":    [ { "key_code": "j" } ],
           "to_if_held_down": [ { "key_code": "right_control" } ],
           "parameters": {
             "basic.to_if_alone_timeout_milliseconds": 200,

@@ -40,6 +40,9 @@ require("lazy").setup({
     dependencies = { "nvim-lua/plenary.nvim" },
   },
 
+  -- Smart splits for better pane navigation
+  { "mrjones2014/smart-splits.nvim", lazy = false },
+
   -- Treesitter
   { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
   { "nvim-treesitter/nvim-treesitter-context" },

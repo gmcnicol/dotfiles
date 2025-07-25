@@ -45,10 +45,6 @@ index = 17
 color = '#db4b4b'
 
 
-# Enable Kitty graphics protocol for inline images
-[terminal]
-kitty_graphics = true
-
 # Font configuration with ligatures
 [font]
 size = 16.0

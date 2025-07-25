@@ -85,9 +85,8 @@ required during startup.
 
 The `alacritty` directory contains `alacritty.toml` with my terminal
 preferences.  It applies the
-[Tokyo Night](https://github.com/folke/tokyonight.nvim) colour scheme, enables
-Kitty's inline image protocol and sets the font size to `16` with ligatures
-enabled.  Copy or symlink the file to
+[Tokyo Night](https://github.com/folke/tokyonight.nvim) colour scheme and sets the
+font size to `16` with ligatures enabled.  Copy or symlink the file to
 `~/.config/alacritty/alacritty.toml` to use it.
 
 ### Keyboard shortcuts

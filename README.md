@@ -92,6 +92,7 @@ Caps Lock is remapped to `Esc`. Hold the keys below for over 200ms to send the m
 | `s`/`l` | Option |
 | `d`/`k` | Shift |
 | `f`/`j` | Control |
+To use these rules, copy or symlink `karabiner/karabiner.json` to `~/.config/karabiner/assets/complex_modifications/` and enable "Home row modifiers" in Karabiner-Elements.
 
 ## WezTerm config
 

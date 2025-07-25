@@ -82,7 +82,7 @@ required during startup.
 | **null-ls.nvim** | `:NullLsInfo` shows attached sources |
 
 
-## Karabina home row cheatsheet
+## Karabiner home row cheatsheet
 
 Caps Lock is remapped to `Esc`. Hold the keys below for over 200ms to send the modifier while tapping types the key normally (tap then hold repeats the key).
 

@@ -1,6 +1,6 @@
 -- Key mappings for gmm
+
 -- <leader> is space, <leader>pv opens Ex
-vim.g.mapleader = " "
 
 -- use 4 spaces for indentation
 vim.opt.tabstop = 4

@@ -79,3 +79,28 @@ required during startup.
 | **nvim-dap-virtual-text** | `:DapVirtualTextToggle` |
 | **neotest** | `:lua require('neotest').run.run()` |
 | **null-ls.nvim** | `:NullLsInfo` shows attached sources |
+
+## Alacritty config
+
+The `alacritty` directory contains `alacritty.toml` with my terminal
+preferences.  It applies the
+[Tokyo Night](https://github.com/folke/tokyonight.nvim) colour scheme, enables
+Kitty's inline image protocol and sets the font size to `16` with ligatures
+enabled.  Copy or symlink the file to
+`~/.config/alacritty/alacritty.toml` to use it.
+
+### Keyboard shortcuts
+
+| Shortcut | Action |
+| -------- | ------ |
+| `Ctrl+Shift+C` | Copy selection |
+| `Ctrl+Shift+V` | Paste clipboard |
+| `Ctrl+Shift+F` | Search scrollback |
+| `Ctrl+Shift+L` | Clear scrollback |
+| `Ctrl+Shift+R` | Reload configuration |
+| `Ctrl+Shift++` | Increase font size |
+| `Ctrl+-` | Decrease font size |
+| `Ctrl+0` | Reset font size |
+| `Ctrl+Shift+N` | New window |
+| `Ctrl+Shift+W` | Close window |
+| `F11` | Toggle fullscreen |

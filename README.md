@@ -84,14 +84,14 @@ required during startup.
 
 ## Karabiner home row cheatsheet
 
-Caps Lock is remapped to `Esc`. Hold the keys below for over 200ms to send the modifier while tapping types the key normally (tap then hold repeats the key). The modifier only stays active while its key is pressed.
+Caps Lock is remapped to `Esc`. Hold the keys below for over 200ms to send the modifier while tapping types the key normally. Holding a key after tapping keeps the modifier active instead of repeating the letter. The modifier only stays active while its key is pressed.
 
 | Key | Held modifier |
 | --- | ------------- |
-| `a`/`;` | Command |
-| `s`/`l` | Option |
-| `d`/`k` | Shift |
-| `f`/`j` | Control |
+| `a`/`;` | Command (right for `;`) |
+| `s`/`l` | Option (right for `l`) |
+| `d`/`k` | Shift (right for `k`) |
+| `f`/`j` | Control (right for `j`) |
 To use these rules, copy or symlink `karabiner/karabiner.json` to `~/.config/karabiner/assets/complex_modifications/` and enable "Home row modifiers" in Karabiner-Elements.
 
 ## WezTerm config

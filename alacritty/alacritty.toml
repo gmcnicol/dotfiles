@@ -45,7 +45,6 @@ index = 17
 color = '#db4b4b'
 
 
-# Font configuration with ligatures
+# Font configuration
 [font]
 size = 16.0
-features = ["liga"]

@@ -129,3 +129,29 @@ It also maps `Ctrl+Shift+Space` to enter a Vim-style copy mode for selecting and
 | `Ctrl+Shift+Space` | Enter copy mode |
 | `Alt+Enter` | Toggle fullscreen |
 | `Ctrl+Shift+Left/Right` | Cycle tabs |
+
+### Pane management cheat sheet
+
+**Neovim (smart-splits.nvim)**
+
+| Shortcut | Action |
+| -------- | ------ |
+| `<C-h>`/`<C-j>`/`<C-k>`/`<C-l>` | Move focus to adjacent split |
+| `<C-S-h>`/`<C-S-j>`/`<C-S-k>`/`<C-S-l>` | Resize current split |
+| `:split` / `:vsplit` | Create horizontal/vertical split |
+
+**WezTerm (tmux style)**
+
+The leader key is `Ctrl+a`.
+
+| Shortcut | Action |
+| -------- | ------ |
+| `Leader + \\` | Split pane horizontally |
+| `Leader + -` | Split pane vertically |
+| `Ctrl+h/j/k/l` | Move between panes |
+| `Ctrl+Shift+h/j/k/l` | Resize active pane |
+| `Leader + m` | Toggle pane zoom |
+| `Leader + c` | New tab |
+| `Leader + p` / `Leader + n` | Previous/next tab |
+| `Leader + [1-9]` | Switch to tab number |
+| `Leader + [` | Enter copy mode |

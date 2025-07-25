@@ -104,4 +104,5 @@ enabled.  Copy or symlink the file to
 | `Ctrl+0` | Reset font size |
 | `Ctrl+Shift+N` | New window |
 | `Ctrl+Shift+W` | Close window |
+| `Ctrl+Shift+Space` | Enter select mode |
 | `F11` | Toggle fullscreen |

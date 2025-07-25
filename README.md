@@ -84,7 +84,7 @@ required during startup.
 
 ## Karabiner home row cheatsheet
 
-Caps Lock is remapped to `Esc`. Hold the keys below for over 200ms to send the modifier while tapping types the key normally (tap then hold repeats the key).
+Caps Lock is remapped to `Esc`. Hold the keys below for over 200ms to send the modifier while tapping types the key normally (tap then hold repeats the key). The modifier only stays active while its key is pressed.
 
 | Key | Held modifier |
 | --- | ------------- |

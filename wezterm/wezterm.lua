@@ -1,6 +1,9 @@
 local wezterm = require 'wezterm'
 
 return {
+  -- let both Option keys produce composed characters like '#'
+  send_composed_key_when_left_alt_is_pressed  = true,
+  send_composed_key_when_right_alt_is_pressed = true,
   font_size = 16.0,
   colors = {
     foreground = '#c0caf5',

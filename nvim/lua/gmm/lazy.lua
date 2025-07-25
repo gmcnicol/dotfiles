@@ -26,6 +26,7 @@ require("lazy").setup({
   { "tpope/vim-sleuth" },
   { "tpope/vim-commentary" },
   { "lewis6991/gitsigns.nvim", opts = {} },
+  { "tpope/vim-fugitive" },
 
   -- Harpoon / worktree
   {

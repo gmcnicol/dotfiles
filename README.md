@@ -50,7 +50,7 @@ These dotfiles include a minimal [lazy.nvim](https://github.com/folke/lazy.nvim)
 - `neotest` with the JUnit adapter (`mike-deakin/neotest-junit`)
 - `null-ls.nvim` with formatters and linters like `google-java-format` and Checkstyle
 - `harpoon` v2 and `git-worktree.nvim`
-- `gitsigns.nvim`, `vim-commentary` and `vim-sleuth`
+- `gitsigns.nvim`, `vim-fugitive`, `vim-commentary` and `vim-sleuth`
 
 Most of these rely on `nvim-lua/plenary.nvim`, which is included automatically.
 LSP support is configured in `nvim/after/plugin/lsp.lua` where `gmm.lsp` is
@@ -71,6 +71,7 @@ required during startup.
 | **harpoon** | `<leader>a` mark, `<C-e>` menu, `<leader>h[1-9]` pick slot, `<C-S-P>/<C-S-N>` cycle |
 | **git-worktree.nvim** | `:lua require('git-worktree').create_worktree()` |
 | **gitsigns.nvim** | `:Gitsigns preview_hunk`, `:Gitsigns blame_line` |
+| **vim-fugitive** | `:Git` to run Git commands |
 | **vim-commentary** | `gcc` comment line, `gc` in visual mode |
 | **nvim-treesitter** | `:TSUpdate`, `:TSInstall` parsers |
 | **nvim-treesitter-context** | `:TSContextToggle` shows code context |

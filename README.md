@@ -105,3 +105,27 @@ font size to `16` with ligatures enabled.  Copy or symlink the file to
 | `Ctrl+Shift+W` | Close window |
 | `Ctrl+Shift+Space` | Enter select mode |
 | `F11` | Toggle fullscreen |
+
+## WezTerm config
+
+The `wezterm` directory contains `wezterm.lua` mirroring the Alacritty theme and font size.
+Copy or symlink the file to `~/.config/wezterm/wezterm.lua` to use it.
+It also maps `Ctrl+Shift+Space` to enter a Vim-style copy mode for selecting and yanking from the scrollback.
+
+### Keyboard shortcuts
+
+| Shortcut | Action |
+| -------- | ------ |
+| `Ctrl+Shift+C` | Copy selection |
+| `Ctrl+Shift+V` | Paste clipboard |
+| `Ctrl+Shift+F` | Search scrollback |
+| `Ctrl+Shift+R` | Reload configuration |
+| `Ctrl+Shift++` | Increase font size |
+| `Ctrl+-` | Decrease font size |
+| `Ctrl+0` | Reset font size |
+| `Ctrl+Shift+T` | New tab |
+| `Ctrl+Shift+N` | New window |
+| `Ctrl+Shift+W` | Close tab or window |
+| `Ctrl+Shift+Space` | Enter copy mode |
+| `Alt+Enter` | Toggle fullscreen |
+| `Ctrl+Shift+Left/Right` | Cycle tabs |

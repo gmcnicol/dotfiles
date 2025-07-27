@@ -64,10 +64,10 @@ config.colors = {
 }
 config.window_decorations = "RESIZE"
 config.window_padding = {
-  top = 10,
-  bottom = 10,
-  left = 10,
-  right = 10,
+  top = '2cell',
+  bottom = '2cell',
+  left = '2cell',
+  right = '2cell',
 }
 
 config.leader = { key = "a", mods = "CTRL", timeout_milliseconds = 2000 }

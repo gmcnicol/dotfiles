@@ -100,6 +100,12 @@ The `wezterm` directory contains `wezterm.lua` mirroring the Alacritty theme and
 Copy or symlink the file to `~/.config/wezterm/wezterm.lua` to use it.
 It also maps `Ctrl+Shift+Space` to enter a Vim-style copy mode for selecting and yanking from the scrollback.
 
+Padding values must include a unit such as `px` or `cell`. Using cell units
+(for example `2cell`) avoids Wayland errors about the buffer size needing to be
+a multiple of the display scale factor. Leaving
+`adjust_window_size_when_changing_font_size` at its default value ensures that
+font size changes keep the window dimensions valid.
+
 ### Keyboard shortcuts
 
 | Shortcut | Action |

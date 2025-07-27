@@ -106,6 +106,11 @@ a multiple of the display scale factor. Leaving
 `adjust_window_size_when_changing_font_size` at its default value ensures that
 font size changes keep the window dimensions valid.
 
+If the window still fails to start on a high-DPI monitor (for example at 200%
+scale), make sure you're running a recent WezTerm release (2024 or later) and
+have the config in `~/.config/wezterm/wezterm.lua`. Older versions may ignore
+cell units and produce the buffer_scale error regardless of padding.
+
 ### Keyboard shortcuts
 
 | Shortcut | Action |

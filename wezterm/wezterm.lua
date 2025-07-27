@@ -70,6 +70,9 @@ config.window_padding = {
   right = '2cell',
 }
 
+-- Prevent Wayland buffer scale errors when toggling font size on HiDPI displays
+config.adjust_window_size_when_changing_font_size = true
+
 config.leader = { key = "a", mods = "CTRL", timeout_milliseconds = 2000 }
 
 local action = wezterm.action

@@ -63,6 +63,7 @@ config.colors = {
   },
 }
 config.window_decorations = "RESIZE"
+config.window_close_confirmation = "NeverPrompt"
 config.window_padding = {
   top = '2cell',
   bottom = '2cell',

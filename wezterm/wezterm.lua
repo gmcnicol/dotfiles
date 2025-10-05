@@ -84,6 +84,11 @@ config.keys = {
     mods = "LEADER",
     action = action.SplitHorizontal({ domain = "CurrentPaneDomain" }),
   },
+  {
+    key = "Enter",
+    mods = "SHIFT",
+    action = action.SendString("\x1b\r"),
+  },
   split_nav("h"),
   split_nav("j"),
   split_nav("k"),

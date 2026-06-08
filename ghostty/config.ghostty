@@ -1,0 +1,29 @@
+# Shared Ghostty defaults for client machines.
+# Vim-like terminal copy/navigation lives in tmux: Ctrl-Space then [.
+
+clipboard-write = allow
+copy-on-select = clipboard
+mouse-shift-capture = never
+
+# Copy/paste. "super" is Command on macOS and the Super key on Linux.
+keybind = performable:super+c=copy_to_clipboard
+keybind = performable:ctrl+shift+c=copy_to_clipboard
+keybind = super+v=paste_from_clipboard
+keybind = ctrl+shift+v=paste_from_clipboard
+
+# Native Ghostty scrollback search.
+keybind = super+f=start_search
+keybind = ctrl+shift+f=start_search
+
+# Dump scrollback to a temp file and paste the path into the terminal.
+# Useful follow-up: nvim <pasted-path>
+keybind = super+shift+j=write_scrollback_file:paste
+keybind = ctrl+shift+j=write_scrollback_file:paste
+
+# Open the full scrollback in the OS default text editor.
+keybind = super+shift+o=write_scrollback_file:open
+keybind = ctrl+shift+o=write_scrollback_file:open
+
+# Reload after edits.
+keybind = super+shift+,=reload_config
+keybind = ctrl+shift+,=reload_config

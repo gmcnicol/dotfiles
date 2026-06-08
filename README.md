@@ -1,85 +1,137 @@
 # dotfiles
 Settings I want between different unix type installations.
 
-## Tmux auto-reload on config save
+## Install
 
-You can have tmux automatically reload your `tmux.conf` whenever you save it (no plugin folder needed).  
-Add the following block to the bottom of your `~/.config/tmux/tmux.conf`:
+From this repo:
 
-```tmux
-bind r source-file ~/.config/tmux/tmux.conf \
-  \; display-message "tmux.conf reloaded"
-
-# Auto-reload tmux config on save (requires inotifywait)
-if-shell "command -v inotifywait >/dev/null" \
-  "run-shell -b 'while inotifywait -e close_write ~/.config/tmux/tmux.conf; do \
-      tmux source-file ~/.config/tmux/tmux.conf; \
-      tmux display-message \"tmux.conf auto-reloaded\"; \
-    done'"
-
-run '~/.tmux/plugins/tpm/tpm'
+```sh
+./install.sh
 ```
 
-### One-time setup
+The installer links Ghostty, Neovim, tmux, and zsh into the expected config
+locations, creates `~/.zshrc.local`, and installs TPM if it is missing. If a
+real file or directory already exists where a link should go, the script stops.
+Re-run with `--force` to move the existing path aside with a timestamped `.bak`
+suffix.
 
-Install the required `inotifywait` utility:
+The script is idempotent: running it again leaves existing correct links and
+the zsh source line unchanged.
 
-```bash
-# Debian/Ubuntu
-sudo apt-get install inotify-tools
+## Ghostty setup
 
-# macOS (with Homebrew)
-brew install inotify-tools
+The Ghostty config is shared from `ghostty/config.ghostty` and should be
+symlinked to `~/.config/ghostty/config.ghostty` on macOS and Omarchy.
+
+The installer does this automatically:
+
+```sh
+./install.sh
 ```
+
+Manual setup:
+
+```sh
+mkdir -p "$HOME/.config/ghostty"
+ln -sf "$PWD/ghostty/config.ghostty" "$HOME/.config/ghostty/config.ghostty"
+```
+
+Ghostty reads the XDG config path on both Linux and macOS:
+
+```text
+~/.config/ghostty/config.ghostty
+```
+
+macOS can also read:
+
+```text
+~/Library/Application Support/com.mitchellh.ghostty/config.ghostty
+```
+
+If both exist, the macOS app-support config is loaded after the XDG config and
+can override it. For these dotfiles, prefer the XDG path above and avoid keeping
+a second macOS-specific Ghostty config unless you intentionally want local
+overrides.
+
+Reload Ghostty after linking with `Cmd-Shift-,` on macOS or `Ctrl-Shift-,` on
+Linux, or restart Ghostty.
+
+Useful bindings:
+
+| Key | Action |
+| --- | ------ |
+| `Cmd-c` / `Ctrl-Shift-c` | Copy selection |
+| `Cmd-v` / `Ctrl-Shift-v` | Paste clipboard |
+| `Cmd-f` / `Ctrl-Shift-f` | Start Ghostty scrollback search |
+| `Cmd-Shift-j` / `Ctrl-Shift-j` | Paste a temp scrollback file path |
+| `Cmd-Shift-o` / `Ctrl-Shift-o` | Open scrollback in the OS text editor |
+| `Cmd-Shift-,` / `Ctrl-Shift-,` | Reload Ghostty config |
+
+For Vim-style terminal selection, use tmux copy mode: `Ctrl-Space [` then
+`v` to select and `y` to yank.
+
+## Tmux setup
+
+The tmux config is shared from `tmux/tmux.conf` and should be symlinked to
+`~/.config/tmux/tmux.conf` on every machine.
+
+```sh
+set -eu
+
+DOTFILES_DIR="${DOTFILES_DIR:-$PWD}"
+
+mkdir -p "$HOME/.config/tmux" "$HOME/.tmux/plugins"
+ln -sf "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
+
+if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+  git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+fi
+```
+
+Start tmux and press `prefix + I` to install plugins. The prefix is
+`Ctrl-Space`.
+
+The matching zsh helpers live in `zsh/.zshrc`:
+
+| Command | Action |
+| ------- | ------ |
+| `t` | Attach/create a session for the current Git repo or `main` from `$HOME` |
+| `t dotfiles` | Attach/create `dotfiles`, searching common project roots |
+| `t dotfiles ~/src/dotfiles` | Attach/create `dotfiles` at an explicit directory |
+| `tt` | Fuzzy-pick existing sessions and common project directories |
+| `tl` | List existing sessions and common project directories |
+
+See `tmux/README.md` for the cheat sheet.
 
 ## Neovim setup
 
-You need ripgrep installed btw. 
+The Neovim config is a lean language-aware editor, not a shell replacement. It
+uses Catppuccin Mocha to match tmux and focuses on Java/Maven/Spring basics,
+TypeScript, SQL, Telescope, Harpoon, LSP, formatting, and a small Codex doorway.
 
-These dotfiles include a minimal [lazy.nvim](https://github.com/folke/lazy.nvim) configuration.  The plugin list focuses on Java development and general quality-of-life enhancements.
+Prerequisites:
 
-### Included plugins
+- Neovim 0.9.5 or newer for now
+- `git`
+- `ripgrep`
+- Node/npm for TypeScript, ESLint, Prettier, and Codex
+- JDK and Maven, preferably via SDKMAN/Homebrew/apt/pacman or project `mvnw`
 
-- `mason.nvim`, `mason-lspconfig.nvim` and `nvim-lspconfig` for installing and configuring language servers
-- `mfussenegger/nvim-jdtls` for Java LSP support
-- `hrsh7th/nvim-cmp` with buffer, path and LuaSnip completion sources
-- `L3MON4D3/LuaSnip` and `rafamadriz/friendly-snippets` for snippets
-- `nvim-treesitter` with `nvim-treesitter-context`
-- `telescope.nvim` and `neo-tree.nvim` for navigation (the panel is disabled by default)
-- `nvim-dap`, `nvim-dap-ui` and virtual text (plus the Java debug adapter) for debugging
-- `neotest` with the JUnit adapter (`mike-deakin/neotest-junit`)
-- `null-ls.nvim` with formatters and linters like `google-java-format` and Checkstyle
-- `harpoon` v2 and `git-worktree.nvim`
-- `gitsigns.nvim`, `vim-fugitive`, `vim-commentary` and `vim-sleuth`
+Useful entry points:
 
-Most of these rely on `nvim-lua/plenary.nvim`, which is included automatically.
-LSP support is configured in `nvim/after/plugin/lsp.lua` where `gmm.lsp` is
-required during startup.
+| Key/command | Action |
+| ----------- | ------ |
+| `:Lazy` | Plugin manager |
+| `:Mason` | LSP/DAP/tool installer |
+| `<leader>pv` | netrw project browser |
+| `<leader>pf` / `<leader>pg` | Find files / Git files |
+| `<leader>ps` / `<leader>pws` | Search string / word |
+| `<leader>a` / `<C-e>` | Harpoon add / menu |
+| `<leader>mc` / `<leader>mt` / `<leader>mp` | Maven compile / test / package |
+| `<leader>mb` | `mvn spring-boot:run` |
+| `<leader>xx` / `<leader>xr` / `<leader>xa` | Codex open / resume / ask |
 
-### Plugin cheat sheet
-
-| Plugin | Sample commands |
-| ------ | --------------- |
-| **lazy.nvim** | `:Lazy` opens the plugin manager |
-| **mason.nvim** | `:Mason` shows LSP/DAP installer |
-| **nvim-lspconfig** | `gd`/`gD`/`gi`/`gr` jump around code, `<C-S-f>` formats, `:LspInfo` shows active servers |
-| **nvim-jdtls** | Java LSP starts automatically; `:JdtCompile` / `:JdtUpdateConfig` for Java projects |
-| **nvim-cmp** | `<C-n>/<C-p>` navigate completion menu |
-| **LuaSnip** | `<C-k>` expand or jump in a snippet |
-| **telescope.nvim** | `<leader>pf` files, `<leader>pg` git files, `<leader>ps` grep string, `<leader>pws` grep word |
-| **neo-tree.nvim** | `:Neotree toggle` file explorer (panel disabled) |
-| **harpoon** | `<leader>a` mark, `<C-e>` menu, `<leader>h[1-9]` pick slot, `<C-S-P>/<C-S-N>` cycle |
-| **git-worktree.nvim** | `:lua require('git-worktree').create_worktree()` |
-| **gitsigns.nvim** | `:Gitsigns preview_hunk`, `:Gitsigns blame_line` |
-| **vim-fugitive** | `:Git` to run Git commands |
-| **vim-commentary** | `gcc` comment line, `gc` in visual mode |
-| **nvim-treesitter** | `:TSUpdate`, `:TSInstall` parsers |
-| **nvim-treesitter-context** | `:TSContextToggle` shows code context |
-| **nvim-dap** | `:lua require('dap').continue()` etc. |
-| **nvim-dap-ui** | `:lua require('dapui').toggle()` |
-| **nvim-dap-virtual-text** | `:DapVirtualTextToggle` |
-| **neotest** | `:lua require('neotest').run.run()` |
-| **null-ls.nvim** | `:NullLsInfo` shows attached sources |
+See `nvim/README.md` for the full cheat sheet.
 
 
 ## Karabiner home row cheatsheet

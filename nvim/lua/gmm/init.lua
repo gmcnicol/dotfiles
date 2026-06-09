@@ -1,4 +1,3 @@
--- load the plugin manager before any mappings that depend on plugins
+require("gmm.options")
 require("gmm.lazy")
-require("gmm.remap")
-
+require("gmm.keymaps")

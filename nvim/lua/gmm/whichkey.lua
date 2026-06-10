@@ -3,14 +3,14 @@ local M = {}
 function M.setup()
   local wk = require("which-key")
   wk.setup({})
-  wk.register({
-    ["<leader>c"] = { name = "code" },
-    ["<leader>d"] = { name = "debug" },
-    ["<leader>j"] = { name = "java" },
-    ["<leader>m"] = { name = "maven" },
-    ["<leader>o"] = { name = "overseer" },
-    ["<leader>p"] = { name = "project" },
-    ["<leader>x"] = { name = "codex" },
+  wk.add({
+    { "<leader>c", group = "code" },
+    { "<leader>d", group = "debug" },
+    { "<leader>j", group = "java" },
+    { "<leader>m", group = "maven" },
+    { "<leader>o", group = "overseer" },
+    { "<leader>p", group = "project" },
+    { "<leader>x", group = "codex" },
   })
 end
 

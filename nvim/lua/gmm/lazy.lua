@@ -18,8 +18,13 @@ require("lazy").setup({
     lazy = false,
     priority = 1000,
     config = function()
+      vim.opt.background = "dark"
       require("catppuccin").setup({
         flavour = "mocha",
+        background = {
+          light = "mocha",
+          dark = "mocha",
+        },
         transparent_background = false,
         default_integrations = true,
         integrations = {
@@ -43,7 +48,7 @@ require("lazy").setup({
           which_key = true,
         },
       })
-      vim.cmd.colorscheme("catppuccin")
+      vim.cmd.colorscheme("catppuccin-mocha")
     end,
   },
 

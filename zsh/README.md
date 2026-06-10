@@ -32,6 +32,25 @@ Useful terminal-oriented plugins to configure in the real `~/.zshrc` where wante
 
 The `fzf` command itself is still made available from `.zshenv` when installed in a normal PATH location such as `~/.fzf/bin`; only its key bindings and completion setup are TTY-gated.
 
+### macOS nvm bootstrap
+
+On macOS machines using Homebrew `nvm`, the real `~/.zshrc` must load nvm
+before sourcing this repo's `.zshrc`:
+
+```zsh
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[[ -s "/opt/homebrew/opt/nvm/nvm.sh" ]] && source "/opt/homebrew/opt/nvm/nvm.sh"
+[[ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ]] && source "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+
+source "$HOME/.config/zsh/.zshrc"
+```
+
+The shared `.zshrc` intentionally only runs `nvm use default` when the `nvm`
+function already exists. This keeps the repo config portable, but it means tools
+installed under an nvm-managed Node, such as `codegraph`, will disappear from
+fresh login shells and MCP startup environments if the machine bootstrap omits
+the Homebrew nvm source lines.
+
 ## Machine Prerequisites
 
 For consistent behaviour on every machine, install these everywhere:

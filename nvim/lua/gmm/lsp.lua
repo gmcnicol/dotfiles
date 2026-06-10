@@ -1,5 +1,19 @@
 local M = {}
 
+local function has_server_config(server)
+  return pcall(require, "lspconfig.server_configurations." .. server)
+end
+
+local function first_available_server(candidates)
+  for _, server in ipairs(candidates) do
+    if has_server_config(server) then
+      return server
+    end
+  end
+
+  return candidates[1]
+end
+
 local function on_attach(_, bufnr)
   local opts = { buffer = bufnr }
   local function nmap(keys, func, desc)
@@ -34,7 +48,7 @@ function M.setup()
   require("mason").setup()
 
   local lspconfig = require("lspconfig")
-  local ts_server = vim.fn.has("nvim-0.10") == 1 and "ts_ls" or "tsserver"
+  local ts_server = first_available_server({ "ts_ls", "tsserver" })
   local servers = {
     "lua_ls",
     "jsonls",

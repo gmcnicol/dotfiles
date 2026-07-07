@@ -3,10 +3,10 @@ set -eu
 
 usage() {
   cat <<'EOF'
-Usage: ./install.sh [--force]
+Usage: ./install.sh [--force] [--headless]
 
 Links this repo into the expected config locations:
-  ~/.config/ghostty/config.ghostty -> ghostty/config.ghostty
+  ~/.config/ghostty/config.ghostty -> ghostty/config.ghostty, when Ghostty is installed
   ~/.config/tmux/tmux.conf -> tmux/tmux.conf
   ~/.config/nvim           -> nvim
   ~/.config/zsh/.zshrc     -> zsh/.zshrc
@@ -16,30 +16,42 @@ Links this repo into the expected config locations:
 It also creates ~/.zshrc.local and appends a source line for the shared zsh
 config to ~/.zshrc.
 
+Set DOTFILES_INSTALL_GHOSTTY=1 to force Ghostty config installation on machines
+where Ghostty is not installed.
+
+Use --headless to skip Ghostty config even when Ghostty is installed.
+
 Use --force to move conflicting files/directories aside with a timestamped
 .bak suffix before linking.
 EOF
 }
 
 force=false
-case "${1:-}" in
-  "")
-    ;;
-  --force)
-    force=true
-    ;;
-  -h|--help)
-    usage
-    exit 0
-    ;;
-  *)
-    usage >&2
-    exit 2
-    ;;
-esac
+headless=false
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --force)
+      force=true
+      ;;
+    --headless)
+      headless=true
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
 
 repo_dir=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
 backup_suffix=".bak.$(date +%Y%m%d%H%M%S)"
+tmux_plugin_dir="$HOME/.config/tmux/plugins"
+tpm_dir="$tmux_plugin_dir/tpm"
 
 info() {
   printf '%s\n' "$*"
@@ -100,9 +112,17 @@ append_once() {
   info "Updated: $file"
 }
 
-mkdir -p "$HOME/.config/ghostty" "$HOME/.config/tmux" "$HOME/.config/zsh" "$HOME/.tmux/plugins"
+mkdir -p "$HOME/.config/tmux" "$HOME/.config/zsh" "$tmux_plugin_dir"
 
-link_path "$repo_dir/ghostty/config.ghostty" "$HOME/.config/ghostty/config.ghostty"
+if [ "$headless" = true ] && [ "${DOTFILES_INSTALL_GHOSTTY:-}" != 1 ]; then
+  info "Skipping Ghostty config in headless mode"
+elif [ "${DOTFILES_INSTALL_GHOSTTY:-}" = 1 ] || command -v ghostty >/dev/null 2>&1; then
+  mkdir -p "$HOME/.config/ghostty"
+  link_path "$repo_dir/ghostty/config.ghostty" "$HOME/.config/ghostty/config.ghostty"
+else
+  info "Skipping Ghostty config; use --headless to make this explicit or set DOTFILES_INSTALL_GHOSTTY=1 to force it"
+fi
+
 link_path "$repo_dir/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
 link_path "$repo_dir/nvim" "$HOME/.config/nvim"
 link_path "$repo_dir/zsh/.zshrc" "$HOME/.config/zsh/.zshrc"
@@ -113,15 +133,26 @@ touch "$HOME/.zshrc.local"
 chmod 600 "$HOME/.zshrc.local"
 append_once 'source "$HOME/.config/zsh/.zshrc"' "$HOME/.zshrc" '# Personal zsh customisations'
 
-if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+if [ ! -d "$tpm_dir" ]; then
   if command -v git >/dev/null 2>&1; then
-    git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+    git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
   else
-    info "git not found; install TPM manually at ~/.tmux/plugins/tpm"
+    info "git not found; install TPM manually at $tpm_dir"
   fi
 else
-  info "Already installed: ~/.tmux/plugins/tpm"
+  info "Already installed: $tpm_dir"
+fi
+
+if [ -x "$tpm_dir/bin/install_plugins" ]; then
+  if command -v tmux >/dev/null 2>&1; then
+    tmux start-server \; \
+      set-environment -g TMUX_PLUGIN_MANAGER_PATH "$tmux_plugin_dir/" \; \
+      source-file "$HOME/.config/tmux/tmux.conf"
+    "$tpm_dir/bin/install_plugins"
+  else
+    info "tmux not found; install tmux, then run $tpm_dir/bin/install_plugins"
+  fi
 fi
 
 info
-info "Done. In tmux, press Ctrl-Space then I to install/update plugins."
+info "Done. Tmux plugins are installed when tmux is available."

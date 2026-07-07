@@ -9,9 +9,11 @@ From this repo:
 ./install.sh
 ```
 
-The installer links Ghostty, Neovim, tmux, and zsh into the expected config
-locations, creates `~/.zshrc.local`, and installs TPM if it is missing. If a
-real file or directory already exists where a link should go, the script stops.
+The installer links Neovim, tmux, and zsh into the expected config locations,
+creates `~/.zshrc.local`, and installs TPM if it is missing. Ghostty config is
+linked only when Ghostty is installed or `DOTFILES_INSTALL_GHOSTTY=1` is set.
+Use `--headless` on servers to skip Ghostty even if it is installed. If a real
+file or directory already exists where a link should go, the script stops.
 Re-run with `--force` to move the existing path aside with a timestamped `.bak`
 suffix.
 
@@ -23,10 +25,17 @@ the zsh source line unchanged.
 The Ghostty config is shared from `ghostty/config.ghostty` and should be
 symlinked to `~/.config/ghostty/config.ghostty` on macOS and Omarchy.
 
-The installer does this automatically:
+The installer does this automatically when Ghostty is installed. On headless
+machines, skip Ghostty explicitly:
 
 ```sh
-./install.sh
+./install.sh --headless
+```
+
+To force the link anyway:
+
+```sh
+DOTFILES_INSTALL_GHOSTTY=1 ./install.sh
 ```
 
 Manual setup:
@@ -80,16 +89,24 @@ set -eu
 
 DOTFILES_DIR="${DOTFILES_DIR:-$PWD}"
 
-mkdir -p "$HOME/.config/tmux" "$HOME/.tmux/plugins"
+TMUX_PLUGIN_DIR="$HOME/.config/tmux/plugins"
+TPM_DIR="$TMUX_PLUGIN_DIR/tpm"
+
+mkdir -p "$HOME/.config/tmux" "$TMUX_PLUGIN_DIR"
 ln -sf "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
 
-if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
-  git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+if [ ! -d "$TPM_DIR" ]; then
+  git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
 fi
+
+tmux start-server \; \
+  set-environment -g TMUX_PLUGIN_MANAGER_PATH "$TMUX_PLUGIN_DIR/" \; \
+  source-file "$HOME/.config/tmux/tmux.conf"
+"$TPM_DIR/bin/install_plugins"
 ```
 
-Start tmux and press `prefix + I` to install plugins. The prefix is
-`Ctrl-Space`.
+The top-level `install.sh` performs these steps automatically when `tmux` and
+`git` are available. The prefix is `Ctrl-Space`.
 
 The matching zsh helpers live in `zsh/.zshrc`:
 

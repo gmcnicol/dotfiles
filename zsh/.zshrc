@@ -90,11 +90,41 @@ else
   add-zsh-hook precmd _custom_prompt_precmd
 
   if [[ "$has_tty_ui" == true ]]; then
+    _load_fzf_zsh_integration() {
+      emulate -L zsh
+      local file
+      local -a fallback_files
+
+      command -v fzf >/dev/null 2>&1 || return 0
+
+      if fzf --zsh >/dev/null 2>&1; then
+        source <(fzf --zsh)
+        return 0
+      fi
+
+      fallback_files=(
+        "$HOME/.fzf/shell/completion.zsh"
+        "$HOME/.fzf/shell/key-bindings.zsh"
+        "/opt/homebrew/opt/fzf/shell/completion.zsh"
+        "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
+        "/usr/local/opt/fzf/shell/completion.zsh"
+        "/usr/local/opt/fzf/shell/key-bindings.zsh"
+        "/usr/share/doc/fzf/examples/completion.zsh"
+        "/usr/share/doc/fzf/examples/key-bindings.zsh"
+        "/usr/share/fzf/completion.zsh"
+        "/usr/share/fzf/key-bindings.zsh"
+      )
+
+      for file in $fallback_files; do
+        [[ -r "$file" ]] && source "$file"
+      done
+    }
+
     _defer_cli_init() {
       command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
       command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh)"
       command -v ngrok >/dev/null 2>&1 && eval "$(ngrok completion)"
-      command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
+      _load_fzf_zsh_integration
       add-zsh-hook -d preexec _defer_cli_init
     }
     add-zsh-hook preexec _defer_cli_init

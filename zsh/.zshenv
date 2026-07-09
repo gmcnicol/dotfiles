@@ -7,6 +7,7 @@ path=(
   "$HOME/.local/bin"
   "$HOME/.fzf/bin"
   "$HOME/bin"
+  "$HOME/.fly/bin"
   /opt/homebrew/bin
   /opt/homebrew/sbin
   /usr/local/bin

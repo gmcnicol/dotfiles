@@ -17,6 +17,9 @@ The split is intentional:
 
 This preserves the MacBook pattern: automation has the toolchain it needs, while full shell customization stays interactive-only.
 
+The base PATH layer is shared by interactive and background shells and includes
+local user binaries, fzf, Fly.io CLI, Homebrew, and common system paths.
+
 ## Oh My Zsh Ownership
 
 Oh My Zsh setup stays in each machine's real `~/.zshrc`: `ZSH`, `ZSH_THEME`, `plugins`, completion paths, and `source "$ZSH/oh-my-zsh.sh"` all belong there.

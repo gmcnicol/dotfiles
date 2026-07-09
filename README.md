@@ -9,16 +9,33 @@ From this repo:
 ./install.sh
 ```
 
-The installer links Neovim, tmux, and zsh into the expected config locations,
-creates `~/.zshrc.local`, and installs TPM if it is missing. Ghostty config is
-linked only when Ghostty is installed or `DOTFILES_INSTALL_GHOSTTY=1` is set.
-Use `--headless` on servers to skip Ghostty even if it is installed. If a real
-file or directory already exists where a link should go, the script stops.
-Re-run with `--force` to move the existing path aside with a timestamped `.bak`
-suffix.
+The installer links AeroSpace, Neovim, tmux, and zsh into the expected config
+locations, creates `~/.zshrc.local`, and installs TPM if it is missing. Ghostty
+config is linked only when Ghostty is installed or `DOTFILES_INSTALL_GHOSTTY=1`
+is set. Use `--headless` on servers to skip Ghostty even if it is installed. If
+a real file or directory already exists where a link should go, the script
+stops. Re-run with `--force` to move the existing path aside with a timestamped
+`.bak` suffix.
 
 The script is idempotent: running it again leaves existing correct links and
 the zsh source line unchanged.
+
+## AeroSpace setup
+
+The AeroSpace config lives at `aerospace/aerospace.toml` and is symlinked to
+`~/.config/aerospace/aerospace.toml`.
+
+It mirrors the Omarchy Hyprland tiling flow: Option + arrows focus windows,
+Option + Shift + arrows swap windows, Option + number switches workspaces, and
+Option + Shift + number moves the focused window there. Command stays available
+for normal macOS app shortcuts; use Command only in combined window-manager
+bindings such as Option + Command + Shift + number for silent moves.
+
+Reload after linking:
+
+```sh
+aerospace reload-config
+```
 
 ## Ghostty setup
 
@@ -191,7 +208,8 @@ cell units and produce the buffer_scale error regardless of padding.
 | `Ctrl+Shift++` | Increase font size |
 | `Ctrl+-` | Decrease font size |
 | `Ctrl+0` | Reset font size |
-| `Ctrl+Shift+T` | New tab |
+| `Cmd+T` / `Ctrl+Shift+T` | New window for AeroSpace |
+| `Cmd+Shift+T` | New Ghostty tab |
 | `Ctrl+Shift+N` | New window |
 | `Ctrl+Shift+W` | Close tab or window |
 | `Ctrl+Shift+Space` | Enter copy mode |

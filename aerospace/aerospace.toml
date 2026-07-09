@@ -1,0 +1,127 @@
+config-version = 2
+
+start-at-login = true
+
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+accordion-padding = 0
+
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+automatically-unhide-macos-hidden-apps = false
+persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Outlook'
+if.window-title-regex-substring = 'Reminder'
+run = 'layout floating'
+
+[[on-window-detected]]
+run = ['layout tiling', 'balance-sizes']
+
+[key-mapping]
+preset = 'qwerty'
+
+[gaps]
+inner.horizontal = 0
+inner.vertical = 0
+outer.left = 0
+outer.bottom = 0
+outer.top = 0
+outer.right = 0
+
+[mode.main.binding]
+# Option is the AeroSpace modifier; Command stays mostly native macOS.
+cmd-enter = 'exec-and-forget open -na Ghostty || open -na Terminal'
+
+alt-left = 'focus left'
+alt-right = 'focus right'
+alt-up = 'focus up'
+alt-down = 'focus down'
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+
+alt-shift-left = 'swap left'
+alt-shift-right = 'swap right'
+alt-shift-up = 'swap up'
+alt-shift-down = 'swap down'
+alt-shift-h = 'swap left'
+alt-shift-j = 'swap down'
+alt-shift-k = 'swap up'
+alt-shift-l = 'swap right'
+
+cmd-alt-shift-left = 'move-workspace-to-monitor left'
+cmd-alt-shift-right = 'move-workspace-to-monitor right'
+cmd-alt-shift-up = 'move-workspace-to-monitor up'
+cmd-alt-shift-down = 'move-workspace-to-monitor down'
+
+alt-1 = 'summon-workspace 1'
+alt-2 = 'summon-workspace 2'
+alt-3 = 'summon-workspace 3'
+alt-4 = 'summon-workspace 4'
+alt-5 = 'summon-workspace 5'
+alt-6 = 'summon-workspace 6'
+alt-7 = 'summon-workspace 7'
+alt-8 = 'summon-workspace 8'
+alt-9 = 'summon-workspace 9'
+alt-0 = 'summon-workspace 10'
+
+alt-shift-1 = 'move-node-to-workspace --focus-follows-window 1'
+alt-shift-2 = 'move-node-to-workspace --focus-follows-window 2'
+alt-shift-3 = 'move-node-to-workspace --focus-follows-window 3'
+alt-shift-4 = 'move-node-to-workspace --focus-follows-window 4'
+alt-shift-5 = 'move-node-to-workspace --focus-follows-window 5'
+alt-shift-6 = 'move-node-to-workspace --focus-follows-window 6'
+alt-shift-7 = 'move-node-to-workspace --focus-follows-window 7'
+alt-shift-8 = 'move-node-to-workspace --focus-follows-window 8'
+alt-shift-9 = 'move-node-to-workspace --focus-follows-window 9'
+alt-shift-0 = 'move-node-to-workspace --focus-follows-window 10'
+
+cmd-alt-shift-1 = 'move-node-to-workspace 1'
+cmd-alt-shift-2 = 'move-node-to-workspace 2'
+cmd-alt-shift-3 = 'move-node-to-workspace 3'
+cmd-alt-shift-4 = 'move-node-to-workspace 4'
+cmd-alt-shift-5 = 'move-node-to-workspace 5'
+cmd-alt-shift-6 = 'move-node-to-workspace 6'
+cmd-alt-shift-7 = 'move-node-to-workspace 7'
+cmd-alt-shift-8 = 'move-node-to-workspace 8'
+cmd-alt-shift-9 = 'move-node-to-workspace 9'
+cmd-alt-shift-0 = 'move-node-to-workspace 10'
+
+alt-tab = 'exec-and-forget printf "%s\n" 1 2 3 4 5 6 7 8 9 10 | aerospace workspace --wrap-around --stdin next'
+alt-shift-tab = 'exec-and-forget printf "%s\n" 1 2 3 4 5 6 7 8 9 10 | aerospace workspace --wrap-around --stdin prev'
+cmd-alt-tab = 'workspace-back-and-forth'
+
+ctrl-alt-tab = 'focus-monitor next'
+ctrl-alt-shift-tab = 'focus-monitor prev'
+
+alt-t = 'layout floating tiling'
+alt-f = 'fullscreen'
+ctrl-cmd-f = 'macos-native-fullscreen'
+cmd-alt-j = 'layout tiles horizontal vertical'
+cmd-alt-l = 'layout tiles accordion'
+
+alt-minus = 'resize smart -100'
+alt-equal = 'resize smart +100'
+cmd-alt-minus = 'resize smart -25'
+cmd-alt-equal = 'resize smart +25'
+
+alt-g = 'mode service'
+
+[mode.service.binding]
+esc = 'mode main'
+r = ['flatten-workspace-tree', 'mode main']
+b = ['balance-sizes', 'mode main']
+f = ['layout floating tiling', 'mode main']
+backspace = ['close-all-windows-but-current', 'mode main']
+alt-left = ['join-with left', 'mode main']
+alt-right = ['join-with right', 'mode main']
+alt-up = ['join-with up', 'mode main']
+alt-down = ['join-with down', 'mode main']
+alt-h = ['join-with left', 'mode main']
+alt-j = ['join-with down', 'mode main']
+alt-k = ['join-with up', 'mode main']
+alt-l = ['join-with right', 'mode main']

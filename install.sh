@@ -6,6 +6,7 @@ usage() {
 Usage: ./install.sh [--force] [--headless]
 
 Links this repo into the expected config locations:
+  ~/.config/aerospace/aerospace.toml -> aerospace/aerospace.toml
   ~/.config/ghostty/config.ghostty -> ghostty/config.ghostty, when Ghostty is installed
   ~/.config/tmux/tmux.conf -> tmux/tmux.conf
   ~/.config/nvim           -> nvim
@@ -112,7 +113,9 @@ append_once() {
   info "Updated: $file"
 }
 
-mkdir -p "$HOME/.config/tmux" "$HOME/.config/zsh" "$tmux_plugin_dir"
+mkdir -p "$HOME/.config/aerospace" "$HOME/.config/tmux" "$HOME/.config/zsh" "$tmux_plugin_dir"
+
+link_path "$repo_dir/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
 
 if [ "$headless" = true ] && [ "${DOTFILES_INSTALL_GHOSTTY:-}" != 1 ]; then
   info "Skipping Ghostty config in headless mode"

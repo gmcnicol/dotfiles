@@ -24,6 +24,11 @@ keybind = ctrl+shift+j=write_scrollback_file:paste
 keybind = super+shift+o=write_scrollback_file:open
 keybind = ctrl+shift+o=write_scrollback_file:open
 
+# AeroSpace manages windows, not terminal tabs.
+keybind = super+t=new_window
+keybind = ctrl+shift+t=new_window
+keybind = super+shift+t=new_tab
+
 # Reload after edits.
 keybind = super+shift+,=reload_config
 keybind = ctrl+shift+,=reload_config

@@ -36,3 +36,15 @@ This repository provides Neovim-centered tooling for development. The notes belo
 - `<leader>pws` – search for the word under the cursor.
 
 With these commands you can open projects, navigate code, get completions and format files – the basics for day‑to‑day development.
+
+## Shell Script Checks
+
+Before committing changes to shell scripts, run a Bash syntax check for every
+`.sh` and `.bash` file in the repository:
+
+```bash
+find . -type f \( -name '*.sh' -o -name '*.bash' \) -not -path './.git/*' -print0 |
+  xargs -0 -n1 bash -n
+```
+
+This checks syntax only; it does not execute the scripts.

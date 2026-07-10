@@ -11,14 +11,14 @@ Machine names:
   macos-work-laptop | macos-personal-macmini | omarchy-laptop | ubuntu-server
 
 By default, the redacted snapshot is uploaded with rsync over SSH to
-gareth@nuc:${PWD}/.
+gareth@nuc:/tmp/codex-config-staging/.
 EOF
 }
 
 machine=""
 dest="$(mktemp -d "${TMPDIR:-/tmp}/codex-config-XXXXXX")"
 remote="gareth@nuc"
-remote_dir="$PWD"
+remote_dir="/tmp/codex-config-staging"
 dry_run=0
 
 while [[ $# -gt 0 ]]; do
@@ -63,7 +63,7 @@ esac
 root="$dest"
 codex_out="$root/codex/$machine"
 docker_out="$root/docker-mcp/$machine"
-manifest="$root/$machine-MANIFEST.md"
+manifest="$root/$machine-MANIFEST.txt"
 
 if (( dry_run )); then
   echo "would verify SSH access to $remote"
@@ -133,21 +133,21 @@ if (( dry_run )); then
 fi
 
 {
-  echo "# Collection manifest: $machine"
+  echo "Collection manifest: $machine"
   echo
-  echo "- Collected on: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-  echo "- Hostname: $(hostname)"
-  echo "- OS: $(uname -a)"
+  echo "Collected on: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  echo "Hostname: $(hostname)"
+  echo "OS: $(uname -a)"
   echo
-  echo "## Sources found"
+  echo "Sources found:"
   echo
   if (( ${#sources[@]} == 0 )); then
     echo "No known configuration paths were found."
   else
-    for source in "${sources[@]}"; do echo "- `$source`"; done
+    for source in "${sources[@]}"; do printf -- '%s\n' "$source"; done
   fi
   echo
-  echo "## Intentionally excluded"
+  echo "Intentionally excluded:"
   echo
   echo "Credential files, tokens, private keys, and .env files."
 } > "$manifest"

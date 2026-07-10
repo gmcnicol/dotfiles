@@ -4,6 +4,7 @@
 clipboard-write = allow
 copy-on-select = clipboard
 mouse-shift-capture = never
+confirm-close-surface = false
 
 # Copy/paste. "super" is Command on macOS and the Super key on Linux.
 keybind = performable:super+c=copy_to_clipboard

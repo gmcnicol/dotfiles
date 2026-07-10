@@ -11,14 +11,14 @@ Machine names:
   macos-work-laptop | macos-personal-macmini | omarchy-laptop | ubuntu-server
 
 By default, the redacted snapshot is uploaded with rsync over SSH to
-gareth@nuc:/tmp/codex-config-staging/.
+gareth@nuc:/home/gareth/src/dotfiles/.
 EOF
 }
 
 machine=""
 dest="$(mktemp -d "${TMPDIR:-/tmp}/codex-config-XXXXXX")"
 remote="gareth@nuc"
-remote_dir="/tmp/codex-config-staging"
+remote_dir="/home/gareth/src/dotfiles"
 dry_run=0
 
 while [[ $# -gt 0 ]]; do

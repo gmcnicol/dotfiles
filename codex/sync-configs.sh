@@ -17,6 +17,7 @@ EOF
 
 machine=""
 dest="$(mktemp -d "${TMPDIR:-/tmp}/codex-config-XXXXXX")"
+dest_is_temporary=1
 remote="gareth@nuc"
 remote_dir="/home/gareth/src/dotfiles"
 dry_run=0
@@ -24,7 +25,7 @@ dry_run=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --machine) machine="${2:?missing value for --machine}"; shift 2 ;;
-    --dest) dest="${2:?missing value for --dest}"; shift 2 ;;
+    --dest) dest="${2:?missing value for --dest}"; dest_is_temporary=0; shift 2 ;;
     --remote) remote="${2:?missing value for --remote}"; shift 2 ;;
     --remote-dir) remote_dir="${2:?missing value for --remote-dir}"; shift 2 ;;
     --dry-run) dry_run=1; shift ;;
@@ -32,6 +33,13 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
+
+cleanup() {
+  if (( dest_is_temporary )); then
+    rm -rf -- "$dest"
+  fi
+}
+trap cleanup EXIT
 
 if [[ -z "$machine" ]]; then
   if [[ ! -t 0 ]]; then

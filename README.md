@@ -9,8 +9,8 @@ From this repo:
 ./install.sh
 ```
 
-The installer links AeroSpace, Neovim, tmux, and zsh into the expected config
-locations, creates `~/.zshrc.local`, and installs TPM if it is missing. Ghostty
+The installer renders AeroSpace and links Neovim, tmux, and zsh into the expected
+config locations, creates `~/.zshrc.local`, and installs TPM if it is missing. Ghostty
 config is linked only when Ghostty is installed or `DOTFILES_INSTALL_GHOSTTY=1`
 is set. Use `--headless` on servers to skip Ghostty even if it is installed. If
 a real file or directory already exists where a link should go, the script
@@ -22,18 +22,21 @@ the zsh source line unchanged.
 
 ## AeroSpace setup
 
-The AeroSpace config lives at `aerospace/aerospace.toml` and is symlinked to
-`~/.config/aerospace/aerospace.toml`.
+The shared AeroSpace config lives at `aerospace/aerospace.toml`. Machine-specific
+window routes live in `aerospace/hosts/<hostname>.toml`; `install.sh` combines
+them into `~/.config/aerospace/aerospace.toml`.
 
 It mirrors the Omarchy Hyprland tiling flow: Option + arrows focus windows,
 Option + Shift + arrows swap windows, Option + number switches workspaces, and
 Option + Shift + number moves the focused window there. Command stays available
 for normal macOS app shortcuts; use Command only in combined window-manager
-bindings such as Option + Command + Shift + number for silent moves.
+bindings such as Option + Command + Shift + number for silent moves. Option + P
+opens an app picker and moves the selected app's windows into the current workspace.
 
-Reload after linking:
+Render and reload after changing either file:
 
 ```sh
+aerospace/render-config.sh
 aerospace reload-config
 ```
 

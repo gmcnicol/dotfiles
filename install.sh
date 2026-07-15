@@ -5,8 +5,9 @@ usage() {
   cat <<'EOF'
 Usage: ./install.sh [--force] [--headless]
 
-Links this repo into the expected config locations:
-  ~/.config/aerospace/aerospace.toml -> aerospace/aerospace.toml
+Installs this repo into the expected config locations:
+  ~/.config/aerospace/aerospace.toml from shared config plus host routes
+  ~/.config/aerospace/pull-app.sh -> aerospace/pull-app.sh
   ~/.config/ghostty/config.ghostty -> ghostty/config.ghostty, when Ghostty is installed
   ~/.config/tmux/tmux.conf -> tmux/tmux.conf
   ~/.config/nvim           -> nvim
@@ -115,7 +116,8 @@ append_once() {
 
 mkdir -p "$HOME/.config/aerospace" "$HOME/.config/tmux" "$HOME/.config/zsh" "$tmux_plugin_dir"
 
-link_path "$repo_dir/aerospace/aerospace.toml" "$HOME/.config/aerospace/aerospace.toml"
+"$repo_dir/aerospace/render-config.sh"
+link_path "$repo_dir/aerospace/pull-app.sh" "$HOME/.config/aerospace/pull-app.sh"
 
 if [ "$headless" = true ] && [ "${DOTFILES_INSTALL_GHOSTTY:-}" != 1 ]; then
   info "Skipping Ghostty config in headless mode"

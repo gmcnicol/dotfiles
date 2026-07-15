@@ -1,6 +1,14 @@
 lazy-lock.json
 .codegraph/
 
+# Local Codex and Docker MCP configuration snapshots
+/codex/macos-work-laptop/
+/codex/macos-personal-macmini/
+/codex/omarchy-laptop/
+/codex/ubuntu-server/
+/docker-mcp/
+/*-MANIFEST.txt
+
 # macOS filesystem metadata
 .DS_Store
 ._*

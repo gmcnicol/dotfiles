@@ -114,8 +114,8 @@ assert_contains "$penpot_service/Dockerfile" 'ARG PENPOT_MCP_VERSION'
 assert_contains "$penpot_service/.env" 'PENPOT_MCP_VERSION=2.15.4'
 
 export CODEX_MANAGED_MACHINE="ubuntu-server"
-mkdir -p "$CODEX_HOME/skills/ui-ux-pro-max" "$HOME/.agents/skills/ui-ux-pro-max"
-touch "$CODEX_HOME/skills/ui-ux-pro-max/SKILL.md" "$HOME/.agents/skills/ui-ux-pro-max/SKILL.md"
+mkdir -p "$CODEX_HOME/skills/ui-ux-pro-max" "$HOME/.agents/skills/impeccable"
+touch "$CODEX_HOME/skills/ui-ux-pro-max/SKILL.md" "$HOME/.agents/skills/impeccable/SKILL.md"
 "$manager" update --dry-run > "$test_root/update.txt"
 assert_contains "$test_root/update.txt" 'codex update'
 assert_contains "$test_root/update.txt" 'latest tagged docker/mcp-gateway release'
@@ -123,8 +123,16 @@ assert_contains "$test_root/update.txt" "refresh Docker's curated MCP catalogue"
 assert_contains "$test_root/update.txt" 'would install every current skill from mattpocock/skills except obsidian-vault'
 assert_contains "$test_root/update.txt" 'npx skills update -g -y'
 assert_contains "$test_root/update.txt" 'npx skills add juliusbrussee/caveman -g -a codex -s caveman -y'
+assert_contains "$test_root/update.txt" 'npx skills add pbakaus/impeccable -g -a codex -s impeccable -y'
+assert_contains "$test_root/update.txt" 'npx skills add emilkowalski/skills -g -a codex -s animation-vocabulary emil-design-eng find-animation-opportunities improve-animations review-animations -y'
+assert_contains "$test_root/update.txt" 'npx skills add vercel-labs/agent-skills -g -a codex -s vercel-react-best-practices -y'
+assert_contains "$test_root/update.txt" 'npx skills add leonxlnx/taste-skill -g -a codex -s design-taste-frontend -y'
 assert_contains "$test_root/update.txt" 'would remove legacy Codex skill install: ui-ux-pro-max'
 assert_contains "$test_root/update.txt" 'npx skills remove obsidian-vault -g -a codex -y'
+assert_contains "$test_root/update.txt" 'npx skills remove ui-ux-pro-max -g -a codex -y'
+if grep -Fq -- 'npx skills add nextlevelbuilder/ui-ux-pro-max-skill' "$test_root/update.txt"; then
+  fail "updater still installs ui-ux-pro-max"
+fi
 assert_contains "$test_root/update.txt" 'npm install -g @colbymchenry/codegraph'
 assert_contains "$test_root/update.txt" 'codex plugin marketplace upgrade ponytail'
 assert_contains "$test_root/update.txt" 'codex plugin add github@openai-curated'

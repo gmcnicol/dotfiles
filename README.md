@@ -8,7 +8,7 @@ The NUC profile also runs the persistent [Penpot MCP Docker service](docker/penp
 
 `codex-sync update` reconciles the complete current Matt Pocock skill suite, excluding `obsidian-vault`, so newly added upstream skills arrive without maintaining a static allow-list. It also removes Obsidian and Linear caches after plugin updates. The Penpot service keeps a local default package version in [`docker/penpot-mcp/.env`](docker/penpot-mcp/.env); NUC updates resolve the current stable release and pass that exact version into the build.
 
-The shared skill baseline also installs the maintained `juliusbrussee/caveman` skill for opt-in token-efficient responses. Ponytail remains the single hook runtime.
+The shared skill baseline also installs the maintained `juliusbrussee/caveman` skill for opt-in token-efficient responses. Impeccable supplies the main UI workflow, supported by scoped Emil Kowalski motion skills, Vercel React best practices, and explicit-use design taste for landing pages and portfolios. Ponytail remains the single hook runtime.
 
 ## Local configuration snapshots
 

@@ -36,13 +36,18 @@ It validates the result with Codex's strict configuration parser, backs up a cha
 - Matt Pocock's current skills suite, dynamically discovered with the Obsidian integration excluded
 - `juliusbrussee/caveman` for opt-in token-efficient responses without another hook runtime
 - `find-docs` and `find-skills` from `vercel-labs/skills`
-- `ui-ux-pro-max`
+- Impeccable as the primary UI design workflow and project design-language keeper
+- Emil Kowalski's scoped motion vocabulary, opportunity, planning, review, and design-engineering skills
+- Vercel React best practices for implementation quality
+- `design-taste-frontend` for explicitly requested landing-page and portfolio aesthetics
 
 Skill, plugin, and Codegraph package sources are declared in `dependencies.conf`. The Skills CLI records exact installed metadata in the user-level `~/.agents/.skill-lock.json`; that generated lock and the installed skill copies remain outside this repository.
 
-Skills previously installed directly under `$CODEX_HOME/skills` are listed in `legacy-skills.conf`. After `codex-sync update` verifies the managed replacement exists under `~/.agents/skills`, it removes the legacy copy so Codex sees exactly one installation.
+Skills previously installed directly under `$CODEX_HOME/skills` are mapped to their managed replacements in `legacy-skills.conf`. After `codex-sync update` verifies the replacement exists under `~/.agents/skills`, it removes the legacy copy so Codex sees exactly one installation.
 
 The updater compares Matt-owned entries in the Skills CLI lock with the current upstream suite, removing skills deleted upstream so old machines do not retain a different set indefinitely. Its exclusion list prevents `obsidian-vault` from being installed even temporarily, while the legacy removal entry cleans it from machines that predate source metadata. Applying or checking the managed configuration also purges generated Linear and Obsidian marketplace cache directories.
+
+`ui-ux-pro-max` is intentionally removed before Impeccable is installed. Impeccable owns broad product and brand design work. The Emil skills activate for motion-specific tasks, Vercel's skill owns React performance guidance, and `design-taste-frontend` should be invoked explicitly for landing pages or portfolios rather than as a second general design system.
 
 ## Secrets
 

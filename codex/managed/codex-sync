@@ -155,23 +155,28 @@ purge_removed_integrations() {
 remove_legacy_skill_installs() {
   local manifest="$managed_root/legacy-skills.conf"
   local agents_home="${AGENTS_HOME:-$HOME/.agents}"
-  local skill legacy_path managed_path
+  local skill replacement legacy_path managed_path
   [[ -f "$manifest" ]] || {
     echo "Missing legacy skill manifest: $manifest" >&2
     return 1
   }
 
-  while IFS= read -r skill || [[ -n "$skill" ]]; do
+  while IFS='|' read -r skill replacement || [[ -n "$skill$replacement" ]]; do
     [[ -n "$skill" && "${skill#\#}" == "$skill" ]] || continue
     [[ "$skill" =~ ^[a-z0-9][a-z0-9-]*$ ]] || {
       echo "Invalid legacy skill name: $skill" >&2
       return 1
     }
+    replacement="${replacement:-$skill}"
+    [[ "$replacement" =~ ^[a-z0-9][a-z0-9-]*$ ]] || {
+      echo "Invalid managed replacement skill name: $replacement" >&2
+      return 1
+    }
     legacy_path="$codex_home/skills/$skill"
-    managed_path="$agents_home/skills/$skill"
+    managed_path="$agents_home/skills/$replacement"
     [[ -e "$legacy_path" || -L "$legacy_path" ]] || continue
     if [[ ! -f "$managed_path/SKILL.md" ]]; then
-      echo "Legacy skill remains because managed replacement is missing: $skill" >&2
+      echo "Legacy skill remains because managed replacement is missing: $skill -> $replacement" >&2
       return 1
     fi
     if (( dry_run )); then

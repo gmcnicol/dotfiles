@@ -114,6 +114,8 @@ assert_contains "$penpot_service/Dockerfile" 'ARG PENPOT_MCP_VERSION'
 assert_contains "$penpot_service/.env" 'PENPOT_MCP_VERSION=2.15.4'
 
 export CODEX_MANAGED_MACHINE="ubuntu-server"
+mkdir -p "$CODEX_HOME/skills/ui-ux-pro-max" "$HOME/.agents/skills/ui-ux-pro-max"
+touch "$CODEX_HOME/skills/ui-ux-pro-max/SKILL.md" "$HOME/.agents/skills/ui-ux-pro-max/SKILL.md"
 "$manager" update --dry-run > "$test_root/update.txt"
 assert_contains "$test_root/update.txt" 'codex update'
 assert_contains "$test_root/update.txt" 'latest tagged docker/mcp-gateway release'
@@ -121,6 +123,7 @@ assert_contains "$test_root/update.txt" "refresh Docker's curated MCP catalogue"
 assert_contains "$test_root/update.txt" 'would install every current skill from mattpocock/skills except obsidian-vault'
 assert_contains "$test_root/update.txt" 'npx skills update -g -y'
 assert_contains "$test_root/update.txt" 'npx skills add juliusbrussee/caveman -g -a codex -s caveman -y'
+assert_contains "$test_root/update.txt" 'would remove legacy Codex skill install: ui-ux-pro-max'
 assert_contains "$test_root/update.txt" 'npx skills remove obsidian-vault -g -a codex -y'
 assert_contains "$test_root/update.txt" 'npm install -g @colbymchenry/codegraph'
 assert_contains "$test_root/update.txt" 'codex plugin marketplace upgrade ponytail'

@@ -152,6 +152,40 @@ purge_removed_integrations() {
   done
 }
 
+remove_legacy_skill_installs() {
+  local manifest="$managed_root/legacy-skills.conf"
+  local agents_home="${AGENTS_HOME:-$HOME/.agents}"
+  local skill legacy_path managed_path
+  [[ -f "$manifest" ]] || {
+    echo "Missing legacy skill manifest: $manifest" >&2
+    return 1
+  }
+
+  while IFS= read -r skill || [[ -n "$skill" ]]; do
+    [[ -n "$skill" && "${skill#\#}" == "$skill" ]] || continue
+    [[ "$skill" =~ ^[a-z0-9][a-z0-9-]*$ ]] || {
+      echo "Invalid legacy skill name: $skill" >&2
+      return 1
+    }
+    legacy_path="$codex_home/skills/$skill"
+    managed_path="$agents_home/skills/$skill"
+    [[ -e "$legacy_path" || -L "$legacy_path" ]] || continue
+    if [[ ! -f "$managed_path/SKILL.md" ]]; then
+      echo "Legacy skill remains because managed replacement is missing: $skill" >&2
+      return 1
+    fi
+    if (( dry_run )); then
+      echo "would remove legacy Codex skill install: $skill"
+      continue
+    fi
+    case "$legacy_path" in
+      "$codex_home"/skills/"$skill") find "$legacy_path" -depth -delete ;;
+      *) echo "Refusing unexpected legacy skill path: $legacy_path" >&2; return 1 ;;
+    esac
+    echo "Removed legacy Codex skill install: $skill"
+  done < "$manifest"
+}
+
 install_local_docker_files() {
   local profile="$1"
   local secrets_dir="$HOME/.config/codex"
@@ -592,6 +626,7 @@ doctor() {
     failures=1
   fi
   doctor_machine_services "$machine" || failures=1
+  remove_legacy_skill_installs || failures=1
   purge_removed_integrations || failures=1
   return "$failures"
 }
@@ -624,6 +659,7 @@ case "$command_name" in
     update_docker_mcp "$profile"
     update_machine_services "$machine"
     update_dependencies
+    remove_legacy_skill_installs
     if (( ! dry_run )); then
       purge_removed_integrations
     fi

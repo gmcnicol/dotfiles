@@ -40,6 +40,8 @@ It validates the result with Codex's strict configuration parser, backs up a cha
 
 Skill, plugin, and Codegraph package sources are declared in `dependencies.conf`. The Skills CLI records exact installed metadata in the user-level `~/.agents/.skill-lock.json`; that generated lock and the installed skill copies remain outside this repository.
 
+Skills previously installed directly under `$CODEX_HOME/skills` are listed in `legacy-skills.conf`. After `codex-sync update` verifies the managed replacement exists under `~/.agents/skills`, it removes the legacy copy so Codex sees exactly one installation.
+
 The updater compares Matt-owned entries in the Skills CLI lock with the current upstream suite, removing skills deleted upstream so old machines do not retain a different set indefinitely. Its exclusion list prevents `obsidian-vault` from being installed even temporarily, while the legacy removal entry cleans it from machines that predate source metadata. Applying or checking the managed configuration also purges generated Linear and Obsidian marketplace cache directories.
 
 ## Secrets

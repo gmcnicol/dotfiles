@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Collect non-secret Codex and Docker MCP configuration from the machine where
+# this script is run, then upload it to the configured SSH destination.
+
+usage() {
+  cat <<'EOF'
+Usage:
+  collect-configs.sh --machine NAME [--dest DIRECTORY] [--remote HOST]
+                     [--remote-dir DIRECTORY] [--dry-run]
+
+Machine names:
+  macos-work-laptop | macos-personal-macmini | omarchy-laptop | ubuntu-server
+
+Example:
+  ./collect-configs.sh --machine ubuntu-server --remote gareth@nuc
+
+By default, the collected files are uploaded over SSH with rsync to
+gareth@nuc:${PWD}/.
+EOF
+}
+
+machine=""
+dest="$(mktemp -d "${TMPDIR:-/tmp}/codex-config-XXXXXX")"
+remote="gareth@nuc"
+remote_dir="$PWD"
+dry_run=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --machine) machine="${2:?missing value for --machine}"; shift 2 ;;
+    --dest) dest="${2:?missing value for --dest}"; shift 2 ;;
+    --remote) remote="${2:?missing value for --remote}"; shift 2 ;;
+    --remote-dir) remote_dir="${2:?missing value for --remote-dir}"; shift 2 ;;
+    --dry-run) dry_run=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+if [[ -z "$machine" ]]; then
+  usage >&2
+  exit 2
+fi
+
+case "$machine" in
+  macos-work-laptop|macos-personal-macmini|omarchy-laptop|ubuntu-server) ;;
+  *) echo "Unsupported machine name: $machine" >&2; exit 2 ;;
+esac
+
+root="$dest"
+codex_out="$root/codex/$machine"
+docker_out="$root/docker-mcp/$machine"
+manifest="$root/$machine-MANIFEST.md"
+
+if (( ! dry_run )); then
+  mkdir -p "$codex_out" "$docker_out"
+fi
+
+if (( dry_run )); then
+  echo "would verify SSH access to $remote"
+else
+  ssh -o BatchMode=yes "$remote" true
+fi
+
+declare -a sources=()
+add_source() {
+  local path="$1"
+  if [[ -e "$path" ]]; then
+    sources+=("$path")
+  fi
+}
+
+# Codex configuration. auth.json and other credential stores are deliberately
+# excluded; plugins/skills may contain their own files and are copied below.
+add_source "$HOME/.codex/config.toml"
+add_source "$HOME/.codex/AGENTS.md"
+add_source "$HOME/.codex/skills"
+add_source "$HOME/.codex/plugins"
+add_source "$HOME/.codex/prompts"
+
+# Docker MCP Gateway configuration. Paths vary by Docker version, so include
+# known locations when present and record everything found in the manifest.
+add_source "$HOME/.docker/mcp"
+add_source "$HOME/.docker/mcp.json"
+add_source "$HOME/.docker/mcp.yaml"
+add_source "$HOME/.docker/mcp.yml"
+add_source "$HOME/.config/docker/mcp"
+add_source "$HOME/.config/docker/mcp.json"
+add_source "$HOME/.config/docker/mcp.yaml"
+add_source "$HOME/.config/docker/mcp.yml"
+
+copy_source() {
+  local source="$1" out="$2"
+  if (( dry_run )); then
+    printf 'would copy %s -> %s\n' "$source" "$out"
+    return
+  fi
+
+  mkdir -p "$out"
+  # Exclude common credential and secret material, including nested files.
+  if [[ -d "$source" ]]; then
+    rsync -a --exclude='auth.json' --exclude='credentials*' \
+      --exclude='*.pem' --exclude='*.key' --exclude='*.p12' \
+      --exclude='*.token' --exclude='*.secret' --exclude='.env' \
+      --exclude='.env.*' "$source/" "$out/$(basename "$source")/"
+  else
+    case "$(basename "$source")" in
+      auth.json|credentials*|*.pem|*.key|*.p12|*.token|*.secret|.env|.env.*)
+        echo "skipping sensitive-looking file: $source" >&2
+        ;;
+      *) cp -p "$source" "$out/" ;;
+    esac
+  fi
+}
+
+for source in "${sources[@]}"; do
+  case "$source" in
+    "$HOME/.codex"/*) copy_source "$source" "$codex_out" ;;
+    *) copy_source "$source" "$docker_out" ;;
+  esac
+done
+
+if (( ! dry_run )); then
+  {
+    echo "# Collection manifest: $machine"
+    echo
+    echo "- Collected on: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    echo "- Hostname: $(hostname)"
+    echo "- OS: $(uname -a)"
+    echo
+    echo "## Sources found"
+    echo
+    if (( ${#sources[@]} == 0 )); then
+      echo "No known configuration paths were found."
+    else
+      for source in "${sources[@]}"; do echo "- `$source`"; done
+    fi
+    echo
+    echo "## Intentionally excluded"
+    echo
+    echo "Credential files, tokens, private keys, and .env files."
+  } > "$manifest"
+  remote_root="$remote_dir"
+  ssh -o BatchMode=yes "$remote" "mkdir -p '$remote_root/codex/$machine' '$remote_root/docker-mcp/$machine'"
+  rsync -az --exclude='auth.json' --exclude='credentials*' \
+    --exclude='*.pem' --exclude='*.key' --exclude='*.p12' \
+    --exclude='*.token' --exclude='*.secret' --exclude='.env' \
+    --exclude='.env.*' "$codex_out/" "$remote:$remote_root/codex/$machine/"
+  rsync -az --exclude='auth.json' --exclude='credentials*' \
+    --exclude='*.pem' --exclude='*.key' --exclude='*.p12' \
+    --exclude='*.token' --exclude='*.secret' --exclude='.env' \
+    --exclude='.env.*' "$docker_out/" "$remote:$remote_root/docker-mcp/$machine/"
+  rsync -az "$manifest" "$remote:$remote_root/"
+  echo "Uploaded via SSH to: $remote:$remote_root"
+else
+  echo "would upload $codex_out, $docker_out, and $manifest to $remote:$remote_dir/"
+  echo "Dry run complete; no files were copied."
+fi

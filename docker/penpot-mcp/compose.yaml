@@ -1,0 +1,44 @@
+name: penpot-mcp
+
+services:
+  penpot-mcp:
+    image: local/penpot-mcp:${PENPOT_MCP_VERSION}
+    build:
+      context: .
+      args:
+        PENPOT_MCP_VERSION: ${PENPOT_MCP_VERSION}
+    init: true
+    restart: unless-stopped
+    environment:
+      PENPOT_MCP_LOG_LEVEL: info
+      PENPOT_MCP_PLUGIN_ALLOWED_HOSTS: ${PENPOT_MCP_PLUGIN_ALLOWED_HOST:-nuc}
+      PENPOT_MCP_PLUGIN_SERVER_HOST: 0.0.0.0
+      PENPOT_MCP_REMOTE_MODE: "true"
+      PENPOT_MCP_SERVER_HOST: 0.0.0.0
+      WS_URI: ${PENPOT_MCP_WEBSOCKET_URL:-ws://nuc:4402}
+    ports:
+      - target: 4400
+        published: "4400"
+        host_ip: 0.0.0.0
+        protocol: tcp
+      - target: 4401
+        published: "4401"
+        host_ip: 127.0.0.1
+        protocol: tcp
+      - target: 4402
+        published: "4402"
+        host_ip: 0.0.0.0
+        protocol: tcp
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          Promise.all([fetch('http://127.0.0.1:4400/manifest.json'),fetch('http://127.0.0.1:4401/mcp')]).then(([plugin,mcp])=>process.exit(plugin.ok&&mcp.status<500?0:1)).catch(()=>process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+    security_opt:
+      - no-new-privileges:true

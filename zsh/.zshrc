@@ -350,30 +350,41 @@ alias cmau='claude mcp add --scope user'
 
 unalias cx 2>/dev/null
 cx() {
-  local package="@openai/codex" installed latest
+  local package="@openai/codex"
+  local sync_state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/codex-sync"
+  local sync_stamp="$sync_state_dir/last-successful-update"
+  local sync_due=0
 
-  if ! command -v npm >/dev/null 2>&1; then
-    print -u2 "cx: npm is required to update ${package}"
+  if ! command -v codex >/dev/null 2>&1; then
+    if ! command -v npm >/dev/null 2>&1; then
+      print -u2 "cx: npm is required to install ${package}"
+      return 127
+    fi
+    print "cx: installing ${package}@latest"
+    npm install -g "${package}@latest" || return
+  fi
+
+  if ! command -v codex-sync >/dev/null 2>&1; then
+    print -u2 "cx: codex-sync is required; run the dotfiles installer"
     return 127
   fi
 
-  if ! command -v codex >/dev/null 2>&1; then
-    print "cx: installing ${package}@latest"
-    npm install -g "${package}@latest" || return
-  else
-    latest=$(npm view "${package}@latest" version 2>/dev/null)
-    if [[ -n "$latest" ]]; then
-      installed=$(npm list -g "$package" --depth=0 2>/dev/null | sed -n 's/.*@openai\/codex@\([^ ]*\).*/\1/p' | head -n 1)
-      if [[ "$installed" != "$latest" ]]; then
-        print "cx: installing ${package}@latest (${installed:-not installed} -> ${latest})"
-        npm install -g "${package}@latest" || return
-      fi
-    else
-      print -u2 "cx: unable to check ${package}@latest; running existing codex"
-    fi
+  if [[ "${CX_SYNC_ALWAYS:-0}" == 1 || ! -f "$sync_stamp" ]]; then
+    sync_due=1
+  elif [[ -z "$(find "$sync_stamp" -mmin -1440 -print 2>/dev/null)" ]]; then
+    sync_due=1
   fi
 
-  command codex --yolo "$@"
+  if (( sync_due )); then
+    print "cx: synchronising Codex configuration and dependencies"
+    codex-sync update || return
+    mkdir -p "$sync_state_dir" || return
+    touch "$sync_stamp" || return
+  else
+    codex-sync apply || return
+  fi
+
+  command codex "$@"
 }
 
 refresh_codeartifact_token() {

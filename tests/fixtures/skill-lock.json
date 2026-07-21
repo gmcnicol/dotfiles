@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "skills": {
+    "current-skill": {
+      "source": "mattpocock/skills"
+    },
+    "obsidian-vault": {
+      "source": "mattpocock/skills"
+    },
+    "other-source-skill": {
+      "source": "someone/else"
+    },
+    "removed-upstream": {
+      "source": "mattpocock/skills"
+    }
+  }
+}

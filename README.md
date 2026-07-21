@@ -1,11 +1,23 @@
-# Codex and Docker MCP configuration staging
+# Dotfiles
+
+## Managed Codex configuration
+
+The canonical shared, work, personal, and machine-specific Codex configuration lives in [`codex/managed`](codex/managed). Use `codex-sync` to apply, update, or validate Codex, shared skills, Ponytail hooks, MCP servers, and profile-specific integrations.
+
+The NUC profile also runs the persistent [Penpot MCP Docker service](docker/penpot-mcp), which serves the browser plugin on `nuc:4400`, its WebSocket bridge on `nuc:4402`, and a loopback-only MCP endpoint for Codex on port 4401.
+
+`codex-sync update` reconciles the complete current Matt Pocock skill suite, excluding `obsidian-vault`, so newly added upstream skills arrive without maintaining a static allow-list. It also removes Obsidian and Linear caches after plugin updates. The Penpot service keeps a local default package version in [`docker/penpot-mcp/.env`](docker/penpot-mcp/.env); NUC updates resolve the current stable release and pass that exact version into the build.
+
+The shared skill baseline also installs the maintained `juliusbrussee/caveman` skill for opt-in token-efficient responses. Ponytail remains the single hook runtime.
+
+## Local configuration snapshots
 
 Temporary, local-only staging area for collecting configuration from four machines before comparing and consolidating it.
 
 ## Layout
 
-- `codex/` — Codex configuration, including MCPs, skills, plugins, instructions, and other settings.
-- `docker-mcp/` — Docker MCP Gateway configuration, compose files, catalogs, policies, and related notes.
+- `codex/`: Codex configuration, including MCPs, skills, plugins, instructions, and other settings.
+- `docker-mcp/`: Docker MCP Gateway configuration, compose files, catalogues, policies, and related notes.
 
 Machine folders:
 
@@ -19,14 +31,14 @@ Machine folders:
 - Do not copy secrets, API keys, OAuth tokens, private keys, or credential databases here.
 - Redact secret values while preserving key names and structure.
 - Keep source paths and notes in each machine's `MANIFEST.md`.
-- This directory is disposable and is not intended to become the canonical configuration.
+- The ignored machine snapshot directories are disposable and are not canonical configuration.
 
 ## Suggested collection
 
 For each machine, copy or export the relevant files into its matching folder, then add:
 
-1. `MANIFEST.md` — source paths, OS, versions, and anything intentionally omitted.
-2. `REDACTIONS.md` — names of redacted secrets or machine-specific values.
-3. `NOTES.md` — differences, uncertainties, and desired behavior.
+1. `MANIFEST.md`: source paths, OS, versions, and anything intentionally omitted.
+2. `REDACTIONS.md`: names of redacted secrets or machine-specific values.
+3. `NOTES.md`: differences, uncertainties, and desired behaviour.
 
 After collection, we can compare the four trees, identify a canonical baseline, and produce forward-only changes for the real dotfiles/configuration.

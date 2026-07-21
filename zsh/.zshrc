@@ -384,7 +384,7 @@ cx() {
     codex-sync apply || return
   fi
 
-  command codex "$@"
+  command codex --yolo "$@"
 }
 
 refresh_codeartifact_token() {

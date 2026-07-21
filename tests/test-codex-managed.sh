@@ -142,9 +142,7 @@ assert_contains "$test_root/update.txt" 'PENPOT_MCP_VERSION=stable'
 assert_contains "$zsh_config" 'codex-sync update'
 assert_contains "$zsh_config" 'codex-sync apply'
 assert_contains "$zsh_config" 'last-successful-update'
-if grep -Fq -- 'command codex --yolo' "$zsh_config"; then
-  fail "cx bypasses the managed approval and sandbox policy"
-fi
+assert_contains "$zsh_config" 'command codex --yolo "$@"'
 if grep -Fq -- '-quit' "$zsh_config"; then
   fail "cx uses a GNU-only find option"
 fi

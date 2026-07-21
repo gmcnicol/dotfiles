@@ -12,7 +12,7 @@ codex-sync doctor
 
 `codex-sync` detects the machine from its hostname. Set `CODEX_MANAGED_MACHINE` to override detection or to test another machine's render.
 
-The shared `cx` shell function applies managed configuration before every launch and runs `codex-sync update` when the last successful sync is more than 24 hours old. Set `CX_SYNC_ALWAYS=1` for a forced pre-launch update, or run `codex-sync update` directly at any time. A failed apply or update prevents `cx` from launching a drifted environment. Codex then starts with the managed approval and sandbox policy.
+The shared `cx` shell function applies managed configuration before every launch and runs `codex-sync update` when the last successful sync is more than 24 hours old. Set `CX_SYNC_ALWAYS=1` for a forced pre-launch update, or run `codex-sync update` directly at any time. A failed apply or update prevents `cx` from launching a drifted environment. Codex then starts with `--yolo`, overriding the managed approval and sandbox policy.
 
 `apply` concatenates three non-overlapping TOML layers and generates the Docker MCP Gateway entry from server manifests:
 

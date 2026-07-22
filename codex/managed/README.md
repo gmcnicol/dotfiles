@@ -5,10 +5,13 @@ This directory is the canonical, non-secret Codex configuration shared across Ga
 ## Interface
 
 ```bash
+codex-sync install
 codex-sync apply
 codex-sync update
 codex-sync doctor
 ```
+
+`install` and `update` both perform the full authoritative reconciliation.
 
 `codex-sync` asks which machine it is configuring when run interactively. The dotfiles installer asks the same question once and records the answer for `cx`, which passes the override only to its own sync calls. Direct interactive `codex-sync` calls still prompt. Set `CODEX_MANAGED_MACHINE` for non-interactive installs and syncs, or to render another machine's configuration.
 

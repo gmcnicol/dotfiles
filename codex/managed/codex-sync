@@ -16,6 +16,7 @@ usage() {
 Usage: codex-sync COMMAND [--dry-run]
 
 Commands:
+  install  Install/reconcile config, Codex, skills, plugins, and MCPs
   apply    Render and install config.toml and AGENTS.md for this machine
   update   Apply configuration, update Codex, skills, and Ponytail
   doctor   Validate rendered configuration and inspect the active installation
@@ -241,7 +242,7 @@ install_local_docker_files() {
     }
   done
   local rendered_config
-  rendered_config="$(mktemp "${TMPDIR:-/tmp}/docker-mcp-config-XXXXXX.yaml")"
+  rendered_config="$(mktemp "${TMPDIR:-/tmp}/docker-mcp-config.yaml-XXXXXX")"
   {
     echo "atlassian:"
     echo "  jira:"
@@ -285,7 +286,7 @@ update_codex() {
 apply_config() {
   local machine="$1" profile="$2"
   local rendered
-  rendered="$(mktemp "${TMPDIR:-/tmp}/codex-config-rendered-XXXXXX.toml")"
+  rendered="$(mktemp "${TMPDIR:-/tmp}/codex-config-rendered.toml-XXXXXX")"
   trap 'rm -f -- "$rendered"' RETURN
   render_config "$machine" "$profile" "$rendered"
 
@@ -576,7 +577,7 @@ doctor_machine_services() {
 doctor() {
   local machine="$1" profile="$2" rendered
   local failures=0
-  rendered="$(mktemp "${TMPDIR:-/tmp}/codex-config-doctor-XXXXXX.toml")"
+  rendered="$(mktemp "${TMPDIR:-/tmp}/codex-config-doctor.toml-XXXXXX")"
   trap 'rm -f -- "$rendered"' RETURN
   render_config "$machine" "$profile" "$rendered"
   echo "Rendered configuration is valid TOML for $machine ($profile)."
@@ -697,7 +698,7 @@ profile="$(profile_for_machine "$machine")"
 
 case "$command_name" in
   apply) apply_config "$machine" "$profile" ;;
-  update)
+  install|update)
     update_codex
     if (( dry_run )); then
       echo "would apply Codex configuration for $machine ($profile)"

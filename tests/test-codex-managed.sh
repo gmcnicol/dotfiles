@@ -38,6 +38,10 @@ assert_mcp_shape() {
   assert_contains "$file" "\"--servers\", \"$expected_servers\""
 }
 
+if rg -n 'mktemp( -d)? "[^"\n]*XXXXXX[^"\n]+"' "$manager"; then
+  fail "managed sync uses mktemp templates rejected by macOS"
+fi
+
 export HOME="$test_root/home"
 export CODEX_HOME="$test_root/codex-home"
 mkdir -p "$HOME"
@@ -142,6 +146,8 @@ export CODEX_MANAGED_MACHINE="ubuntu-server"
 mkdir -p "$CODEX_HOME/skills/ui-ux-pro-max" "$HOME/.agents/skills/impeccable"
 touch "$CODEX_HOME/skills/ui-ux-pro-max/SKILL.md" "$HOME/.agents/skills/impeccable/SKILL.md"
 "$manager" update --dry-run > "$test_root/update.txt"
+"$manager" install --dry-run > "$test_root/install-command.txt"
+assert_contains "$test_root/install-command.txt" 'would remove undeclared Codex plugins'
 assert_contains "$test_root/update.txt" 'install @openai/codex@latest only when outdated'
 assert_contains "$test_root/update.txt" 'latest tagged docker/mcp-gateway release'
 assert_contains "$test_root/update.txt" "refresh Docker's curated MCP catalogue"

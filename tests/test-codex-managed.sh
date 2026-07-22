@@ -85,12 +85,18 @@ assert_contains "$HOME/.docker/mcp/codex-managed-config.yaml" '  jira:'
 
 clean_work_home="$test_root/clean-work-home"
 mkdir -p "$clean_work_home"
-if HOME="$clean_work_home" CODEX_HOME="$test_root/clean-work-codex" \
-  CODEX_MANAGED_MACHINE="macos-work-laptop" "$manager" apply >/dev/null 2>&1; then
-  fail "clean work apply succeeded without Jira configuration"
-fi
-[[ ! -f "$test_root/clean-work-codex/config.toml" ]] ||
-  fail "failed work apply partially installed config.toml"
+HOME="$clean_work_home" CODEX_HOME="$test_root/clean-work-codex" \
+  CODEX_MANAGED_MACHINE="macos-work-laptop" "$manager" apply >/dev/null
+[[ -f "$test_root/clean-work-codex/config.toml" ]] ||
+  fail "clean work apply did not install config.toml"
+assert_contains "$clean_work_home/.docker/mcp/codex-managed-config.yaml" '{}'
+
+in_situ_home="$test_root/in-situ-home"
+mkdir -p "$in_situ_home/.docker/mcp"
+printf 'existing: true\n' > "$in_situ_home/.docker/mcp/codex-managed-config.yaml"
+HOME="$in_situ_home" CODEX_HOME="$test_root/in-situ-codex" \
+  CODEX_MANAGED_MACHINE="macos-work-laptop" "$manager" apply >/dev/null
+assert_contains "$in_situ_home/.docker/mcp/codex-managed-config.yaml" 'existing: true'
 
 export CODEX_MANAGED_MACHINE="macos-personal-macmini"
 "$manager" apply --dry-run > "$test_root/personal.toml"

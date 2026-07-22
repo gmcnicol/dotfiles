@@ -60,7 +60,7 @@ Never put API keys or tokens in tracked files. STDIO MCP servers receive named v
 
 On macOS, the gateway reads secrets from Docker Desktop's secure secret store. Enter them through Docker Desktop's MCP Toolkit. On Linux, `codex-sync apply` creates `~/.config/codex/docker-mcp.env` with mode `0600` when missing; populate it using the names from `docker-mcp/secrets.env.example`. Context7 runs without an API key.
 
-On the work MacBook, enter Jira tokens in Docker Desktop, then configure its non-secret URL and username before applying on a clean machine:
+To preconfigure Atlassian on the work MacBook, enter Jira tokens in Docker Desktop and pass its non-secret URL and username:
 
 ```bash
 CODEX_JIRA_URL="https://example.atlassian.net" \
@@ -68,7 +68,7 @@ CODEX_JIRA_USERNAME="name@example.com" \
 codex-sync apply
 ```
 
-Optional `CODEX_CONFLUENCE_URL` and `CODEX_CONFLUENCE_USERNAME` variables add Confluence. Tokens remain in Docker Desktop's secret store; URLs and usernames are written to the dedicated local `~/.docker/mcp/codex-managed-config.yaml` and are not committed. The manager does not overwrite Docker Desktop's general `config.yaml`.
+This runtime setup is optional during installation and can happen later. Existing local settings are preserved. Optional `CODEX_CONFLUENCE_URL` and `CODEX_CONFLUENCE_USERNAME` variables add Confluence. Tokens remain in Docker Desktop's secret store; URLs and usernames are written to the dedicated local `~/.docker/mcp/codex-managed-config.yaml` and are not committed. The manager does not overwrite Docker Desktop's general `config.yaml`.
 
 ## Docker MCP Gateway
 

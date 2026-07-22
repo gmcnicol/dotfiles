@@ -231,14 +231,16 @@ install_local_docker_files() {
     fi
     return 0
   fi
-  if [[ -f "$docker_config" ]] && rg -q '^[[:space:]]+jira:' "$docker_config" && \
-    [[ -z "${CODEX_JIRA_URL:-}" && -z "${CODEX_JIRA_USERNAME:-}" ]]; then
-    echo "Keeping existing work Docker MCP configuration: $docker_config"
-    return 0
-  fi
   if [[ -z "${CODEX_JIRA_URL:-}" || -z "${CODEX_JIRA_USERNAME:-}" ]]; then
-    echo "Work setup requires CODEX_JIRA_URL and CODEX_JIRA_USERNAME before apply can configure Atlassian." >&2
-    return 1
+    if [[ ! -f "$docker_config" ]]; then
+      printf '{}\n' > "$docker_config"
+      chmod 0600 "$docker_config"
+      echo "Created local Docker MCP configuration: $docker_config"
+    else
+      echo "Keeping existing work Docker MCP configuration: $docker_config"
+    fi
+    echo "Atlassian runtime settings can be configured later."
+    return 0
   fi
   local value safe_value_pattern='^[A-Za-z0-9@._:/?&=%+-]+$'
   for value in "$CODEX_JIRA_URL" "$CODEX_JIRA_USERNAME" "${CODEX_CONFLUENCE_URL:-}" "${CODEX_CONFLUENCE_USERNAME:-}"; do
@@ -292,6 +294,7 @@ update_codex() {
 apply_config() {
   local machine="$1" profile="$2"
   local rendered
+  (( dry_run )) || mkdir -p -- "$codex_home"
   rendered="$(mktemp "${TMPDIR:-/tmp}/codex-config-rendered.toml-XXXXXX")"
   trap 'rm -f -- "$rendered"' RETURN
   render_config "$machine" "$profile" "$rendered"
@@ -301,7 +304,6 @@ apply_config() {
     return
   fi
 
-  mkdir -p -- "$codex_home"
   install_local_docker_files "$machine" "$profile"
   backup_and_install "$rendered" "$codex_home/config.toml"
   backup_and_install "$managed_root/shared/AGENTS.md" "$codex_home/AGENTS.md"

@@ -267,13 +267,14 @@ t() {
   session="${target%%$'\t'*}"
   dir="${target#*$'\t'}"
 
+  tmux has-session -t "=$session" 2>/dev/null \
+    || tmux new-session -d -s "$session" -c "$dir" \
+    || return
+
   if [[ -n ${TMUX:-} ]]; then
-    tmux has-session -t "=$session" 2>/dev/null \
-      || tmux new-session -d -s "$session" -c "$dir" \
-      || return
     tmux switch-client -t "=$session"
   else
-    tmux new-session -A -s "$session" -c "$dir"
+    tmux attach-session -t "=$session"
   fi
 }
 

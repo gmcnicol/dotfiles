@@ -56,11 +56,11 @@ The updater compares Matt-owned entries in the Skills CLI lock with the current 
 
 ## Secrets
 
-Never put API keys or tokens in tracked files. STDIO MCP servers receive named variables with `env_vars`; HTTP MCP servers should use OAuth or an environment-backed bearer token. Managed Docker MCP secrets belong in the untracked local environment file described below.
+Never put API keys or tokens in tracked files. STDIO MCP servers receive named variables with `env_vars`; HTTP MCP servers should use OAuth or an environment-backed bearer token.
 
-`codex-sync apply` creates `~/.config/codex/docker-mcp.env` with mode `0600` when it is missing. Populate it using the Docker secret names from `docker-mcp/secrets.env.example`. Context7 runs without an API key. The same file-backed secret mechanism is used on macOS and Linux.
+On macOS, the gateway reads secrets from Docker Desktop's secure secret store. Enter them through Docker Desktop's MCP Toolkit. On Linux, `codex-sync apply` creates `~/.config/codex/docker-mcp.env` with mode `0600` when missing; populate it using the names from `docker-mcp/secrets.env.example`. Context7 runs without an API key.
 
-On the work MacBook, configure Jira before applying on a clean machine:
+On the work MacBook, enter Jira tokens in Docker Desktop, then configure its non-secret URL and username before applying on a clean machine:
 
 ```bash
 CODEX_JIRA_URL="https://example.atlassian.net" \
@@ -68,7 +68,7 @@ CODEX_JIRA_USERNAME="name@example.com" \
 codex-sync apply
 ```
 
-Optional `CODEX_CONFLUENCE_URL` and `CODEX_CONFLUENCE_USERNAME` variables add Confluence. Tokens remain only in `docker-mcp.env`; URLs and usernames are written to the dedicated local `~/.docker/mcp/codex-managed-config.yaml` and are not committed. The manager does not overwrite Docker Desktop's general `config.yaml`.
+Optional `CODEX_CONFLUENCE_URL` and `CODEX_CONFLUENCE_USERNAME` variables add Confluence. Tokens remain in Docker Desktop's secret store; URLs and usernames are written to the dedicated local `~/.docker/mcp/codex-managed-config.yaml` and are not committed. The manager does not overwrite Docker Desktop's general `config.yaml`.
 
 ## Docker MCP Gateway
 

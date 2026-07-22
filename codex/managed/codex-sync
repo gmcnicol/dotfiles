@@ -87,7 +87,11 @@ render_config() {
   local machine="$1" profile="$2" output="$3"
   local docker_servers docker_timeout docker_secrets docker_config
   docker_servers="$(docker_servers_for_profile "$profile")"
-  docker_secrets="$HOME/.config/codex/docker-mcp.env"
+  if [[ "$machine" == macos-* ]]; then
+    docker_secrets="docker-desktop"
+  else
+    docker_secrets="$HOME/.config/codex/docker-mcp.env"
+  fi
   docker_config="$HOME/.docker/mcp/codex-managed-config.yaml"
   if [[ "$profile" == work ]]; then
     docker_timeout=300
@@ -206,14 +210,16 @@ remove_legacy_skill_installs() {
 }
 
 install_local_docker_files() {
-  local profile="$1"
+  local machine="$1" profile="$2"
   local secrets_dir="$HOME/.config/codex"
   local secrets_file="$secrets_dir/docker-mcp.env"
   local docker_config="$HOME/.docker/mcp/codex-managed-config.yaml"
-  mkdir -p "$secrets_dir"
-  if [[ ! -f "$secrets_file" ]]; then
-    install -m 0600 -- "$managed_root/docker-mcp/secrets.env.example" "$secrets_file"
-    echo "Created local Docker MCP secrets file: $secrets_file"
+  if [[ "$machine" != macos-* ]]; then
+    mkdir -p "$secrets_dir"
+    if [[ ! -f "$secrets_file" ]]; then
+      install -m 0600 -- "$managed_root/docker-mcp/secrets.env.example" "$secrets_file"
+      echo "Created local Docker MCP secrets file: $secrets_file"
+    fi
   fi
 
   mkdir -p "$(dirname "$docker_config")"
@@ -296,7 +302,7 @@ apply_config() {
   fi
 
   mkdir -p -- "$codex_home"
-  install_local_docker_files "$profile"
+  install_local_docker_files "$machine" "$profile"
   backup_and_install "$rendered" "$codex_home/config.toml"
   backup_and_install "$managed_root/shared/AGENTS.md" "$codex_home/AGENTS.md"
   purge_removed_integrations
@@ -614,11 +620,16 @@ doctor() {
     failures=1
   fi
 
-  local secrets_file="$HOME/.config/codex/docker-mcp.env"
-  if [[ -f "$secrets_file" ]]; then
+  local docker_secrets
+  if [[ "$machine" == macos-* ]]; then
+    docker_secrets="docker-desktop"
+    echo "using: Docker Desktop secret store"
+  elif [[ -f "$HOME/.config/codex/docker-mcp.env" ]]; then
+    docker_secrets="$HOME/.config/codex/docker-mcp.env"
     echo "found: local Docker MCP secrets file"
   else
-    echo "missing: $secrets_file"
+    docker_secrets="$HOME/.config/codex/docker-mcp.env"
+    echo "missing: $docker_secrets"
     failures=1
   fi
 
@@ -635,7 +646,7 @@ doctor() {
     local selected_servers gateway_output
     selected_servers="$(docker_servers_for_profile "$profile")"
     if gateway_output="$(docker mcp gateway run --dry-run \
-      --catalog docker-official.json --config "$docker_config" --secrets "$secrets_file" \
+      --catalog docker-official.json --config "$docker_config" --secrets "$docker_secrets" \
       --servers "$selected_servers" 2>&1)" && \
       printf '%s\n' "$gateway_output" | grep -Eq '[1-9][0-9]* tools listed'; then
       echo "passed: Docker MCP Gateway dry run"

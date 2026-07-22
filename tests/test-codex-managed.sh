@@ -27,7 +27,7 @@ assert_root_setting() {
 }
 
 assert_mcp_shape() {
-  local file="$1" expected_servers="$2" expected_count="$3"
+  local file="$1" expected_servers="$2" expected_count="$3" expected_secrets="$4"
   [[ "$(grep -Ec '^\[mcp_servers\.[^]]+\]$' "$file")" -eq "$expected_count" ]] ||
     fail "$file does not contain exactly $expected_count Codex MCP entries"
   assert_contains "$file" '[mcp_servers.codegraph]'
@@ -35,6 +35,7 @@ assert_mcp_shape() {
   assert_contains "$file" 'command = "docker"'
   assert_contains "$file" '"--config",'
   assert_contains "$file" 'codex-managed-config.yaml'
+  assert_contains "$file" "$expected_secrets"
   assert_contains "$file" "\"--servers\", \"$expected_servers\""
 }
 
@@ -74,6 +75,8 @@ CODEX_JIRA_USERNAME="name@example.com" \
 [[ -f "$CODEX_HOME/config.toml" ]] || fail "apply did not create config.toml"
 [[ -f "$CODEX_HOME/AGENTS.md" ]] || fail "apply did not create AGENTS.md"
 assert_contains "$CODEX_HOME/AGENTS.md" 'Use the installed `caveman` skill at full intensity by default'
+[[ ! -e "$HOME/.config/codex/docker-mcp.env" ]] ||
+  fail "macOS apply created a file-backed Docker MCP secret store"
 [[ ! -d "$CODEX_HOME/plugins/cache/openai-curated-remote/linear" ]] ||
   fail "apply did not purge the Linear marketplace cache"
 [[ ! -d "$CODEX_HOME/.tmp/plugins/plugins/obsidian" ]] ||
@@ -99,16 +102,16 @@ done
 
 assert_root_setting "$test_root/work.toml" 'approval_policy = "on-request"'
 assert_root_setting "$test_root/work.toml" 'check_for_update_on_startup = false'
-assert_mcp_shape "$test_root/work.toml" 'context7,notion,playwright,atlassian' 2
-for personal_config in \
-  "$test_root/personal.toml" \
-  "$test_root/omarchy-laptop.toml"; do
+assert_mcp_shape "$test_root/work.toml" 'context7,notion,playwright,atlassian' 2 '"--secrets", "docker-desktop"'
+assert_root_setting "$test_root/personal.toml" 'sandbox_mode = "workspace-write"'
+assert_mcp_shape "$test_root/personal.toml" 'context7,notion,playwright' 2 '"--secrets", "docker-desktop"'
+for personal_config in "$test_root/omarchy-laptop.toml"; do
   assert_root_setting "$personal_config" 'sandbox_mode = "workspace-write"'
-  assert_mcp_shape "$personal_config" 'context7,notion,playwright' 2
+  assert_mcp_shape "$personal_config" 'context7,notion,playwright' 2 'docker-mcp.env'
 done
 assert_root_setting "$test_root/ubuntu-server.toml" 'sandbox_mode = "workspace-write"'
 assert_contains "$test_root/ubuntu-server.toml" '[projects."/home/gareth/src/dotfiles"]'
-assert_mcp_shape "$test_root/ubuntu-server.toml" 'context7,notion,playwright' 3
+assert_mcp_shape "$test_root/ubuntu-server.toml" 'context7,notion,playwright' 3 'docker-mcp.env'
 assert_contains "$test_root/ubuntu-server.toml" '[mcp_servers.penpot]'
 assert_contains "$test_root/ubuntu-server.toml" 'url = "http://127.0.0.1:4401/mcp"'
 

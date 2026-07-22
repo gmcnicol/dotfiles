@@ -192,6 +192,9 @@ fi
 if rg -q 'codex update|dangerously-bypass-hook-trust' "$manager" "$zsh_config"; then
   fail "managed launcher still uses Codex self-update or blanket hook trust"
 fi
+if rg -q 'missing: work Jira configuration|gateway run --dry-run' "$manager"; then
+  fail "doctor still validates user-owned MCP runtime settings"
+fi
 if grep -Fq -- '-quit' "$zsh_config"; then
   fail "cx uses a GNU-only find option"
 fi

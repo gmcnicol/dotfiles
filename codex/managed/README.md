@@ -30,7 +30,7 @@ It validates the result with Codex's strict configuration parser, backs up a cha
 
 The dotfiles installer runs this full update. Existing Codex configuration is backed up and replaced, so rerunning `install.sh` reconciles a machine rather than preserving stale MCP servers, skills, plugins, or hooks.
 
-`doctor` validates the render, checks required commands, and runs `codex doctor` when an active configuration exists.
+`doctor` validates the managed installation and required commands without checking user-owned MCP credentials or runtime settings, then runs `codex doctor` when an active configuration exists.
 
 ## Shared SDLC baseline
 

@@ -639,24 +639,6 @@ doctor() {
   if [[ ! -f "$docker_config" ]]; then
     echo "missing: $docker_config"
     failures=1
-  elif [[ "$profile" == work ]] && ! rg -q '^[[:space:]]+jira:' "$docker_config"; then
-    echo "missing: work Jira configuration in $docker_config"
-    failures=1
-  fi
-
-  if docker mcp version >/dev/null 2>&1 && [[ -f "$HOME/.docker/mcp/catalogs/docker-official.json" ]]; then
-    local selected_servers gateway_output
-    selected_servers="$(docker_servers_for_profile "$profile")"
-    if gateway_output="$(docker mcp gateway run --dry-run \
-      --catalog docker-official.json --config "$docker_config" --secrets "$docker_secrets" \
-      --servers "$selected_servers" 2>&1)" && \
-      printf '%s\n' "$gateway_output" | grep -Eq '[1-9][0-9]* tools listed'; then
-      echo "passed: Docker MCP Gateway dry run"
-    else
-      echo "failed: Docker MCP Gateway dry run"
-      printf '%s\n' "$gateway_output" >&2
-      failures=1
-    fi
   fi
 
   if ! npx skills list --global --json >/dev/null 2>&1; then

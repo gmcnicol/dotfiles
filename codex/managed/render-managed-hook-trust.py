@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import json
+import queue
 import re
 import subprocess
 import sys
+import threading
+import time
 
 
 def managed_plugins(path):
@@ -15,8 +18,31 @@ def managed_plugins(path):
     return plugins
 
 
-def read_response(process, request_id):
-    for line in process.stdout:
+def read_response(process, request_id, timeout=10):
+    deadline = time.monotonic() + timeout
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError(f"Codex app server timed out before response {request_id}")
+        result = queue.Queue(maxsize=1)
+
+        def read_line():
+            try:
+                result.put(process.stdout.readline())
+            except BaseException as error:
+                result.put(error)
+
+        threading.Thread(target=read_line, daemon=True).start()
+        try:
+            line = result.get(timeout=remaining)
+        except queue.Empty as error:
+            raise TimeoutError(
+                f"Codex app server timed out before response {request_id}"
+            ) from error
+        if isinstance(line, BaseException):
+            raise line
+        if not line:
+            break
         message = json.loads(line)
         if message.get("id") == request_id:
             return message
@@ -47,7 +73,11 @@ def discover_hooks(cwd):
         return response["result"]["data"][0]["hooks"]
     finally:
         process.terminate()
-        process.wait(timeout=5)
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
 
 
 def main():

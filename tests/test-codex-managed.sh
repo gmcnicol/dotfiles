@@ -111,31 +111,11 @@ assert_root_setting "$test_root/work.toml" 'check_for_update_on_startup = false'
 assert_mcp_shape "$test_root/work.toml" 'context7,notion,playwright,atlassian' 2 '"--secrets", "docker-desktop"'
 assert_root_setting "$test_root/personal.toml" 'sandbox_mode = "workspace-write"'
 assert_mcp_shape "$test_root/personal.toml" 'context7,notion,playwright' 2 '"--secrets", "docker-desktop"'
-for personal_config in "$test_root/omarchy-laptop.toml"; do
-  assert_root_setting "$personal_config" 'sandbox_mode = "workspace-write"'
-  assert_mcp_shape "$personal_config" 'context7,notion,playwright' 2 'docker-mcp.env'
-done
+assert_root_setting "$test_root/omarchy-laptop.toml" 'sandbox_mode = "workspace-write"'
+assert_mcp_shape "$test_root/omarchy-laptop.toml" 'context7,notion,playwright' 2 'docker-mcp.env'
 assert_root_setting "$test_root/ubuntu-server.toml" 'sandbox_mode = "workspace-write"'
 assert_contains "$test_root/ubuntu-server.toml" '[projects."/home/gareth/src/dotfiles"]'
-assert_mcp_shape "$test_root/ubuntu-server.toml" 'context7,notion,playwright' 3 'docker-mcp.env'
-assert_contains "$test_root/ubuntu-server.toml" '[mcp_servers.penpot]'
-assert_contains "$test_root/ubuntu-server.toml" 'url = "http://127.0.0.1:4401/mcp"'
-
-penpot_service="$repo_root/docker/penpot-mcp"
-[[ -f "$penpot_service/compose.yaml" ]] || fail "Penpot MCP Compose definition is missing"
-[[ -f "$penpot_service/Dockerfile" ]] || fail "Penpot MCP Dockerfile is missing"
-[[ -f "$penpot_service/.env" ]] || fail "Penpot MCP version file is missing"
-docker compose -f "$penpot_service/compose.yaml" config > "$test_root/penpot-compose.yaml"
-assert_contains "$test_root/penpot-compose.yaml" 'PENPOT_MCP_SERVER_HOST: 0.0.0.0'
-assert_contains "$test_root/penpot-compose.yaml" 'PENPOT_MCP_PLUGIN_SERVER_HOST: 0.0.0.0'
-assert_contains "$test_root/penpot-compose.yaml" 'WS_URI: ws://nuc:4402'
-assert_contains "$test_root/penpot-compose.yaml" 'PENPOT_MCP_PLUGIN_ALLOWED_HOSTS: nuc'
-assert_contains "$penpot_service/Dockerfile" 'patch-plugin-config.mjs'
-assert_contains "$test_root/penpot-compose.yaml" 'published: "4400"'
-assert_contains "$test_root/penpot-compose.yaml" 'published: "4401"'
-assert_contains "$test_root/penpot-compose.yaml" 'published: "4402"'
-assert_contains "$penpot_service/Dockerfile" 'ARG PENPOT_MCP_VERSION'
-assert_contains "$penpot_service/.env" 'PENPOT_MCP_VERSION=2.15.4'
+assert_mcp_shape "$test_root/ubuntu-server.toml" 'context7,notion,playwright' 2 'docker-mcp.env'
 
 cat > "$test_root/hooks.json" <<'EOF'
 [
@@ -151,6 +131,41 @@ if rg -q 'other@other' "$test_root/hook-trust.toml"; then
   fail "managed config trusted a hook whose plugin is absent from dependencies.conf"
 fi
 
+HOOK_TRUST_SCRIPT="$repo_root/codex/managed/render-managed-hook-trust.py" python3 - <<'PY'
+import importlib.util
+import os
+import pathlib
+import subprocess
+import types
+
+path = pathlib.Path(os.environ["HOOK_TRUST_SCRIPT"])
+spec = importlib.util.spec_from_file_location("hook_trust", path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+read_fd, write_fd = os.pipe()
+os.write(write_fd, b'{"id":1}\n{"id":2}\n')
+process = types.SimpleNamespace(stdout=os.fdopen(read_fd, encoding="utf-8"))
+try:
+    assert module.read_response(process, 1, timeout=0.1)["id"] == 1
+    assert module.read_response(process, 2, timeout=0.1)["id"] == 2
+finally:
+    process.stdout.close()
+    os.close(write_fd)
+
+process = subprocess.Popen(["sleep", "2"], stdout=subprocess.PIPE, text=True)
+try:
+    try:
+        module.read_response(process, 1, timeout=0.05)
+    except TimeoutError:
+        pass
+    else:
+        raise AssertionError("hook discovery timeout did not fire")
+finally:
+    process.kill()
+    process.wait()
+PY
+
 export CODEX_MANAGED_MACHINE="ubuntu-server"
 mkdir -p "$CODEX_HOME/skills/ui-ux-pro-max" "$HOME/.agents/skills/impeccable"
 touch "$CODEX_HOME/skills/ui-ux-pro-max/SKILL.md" "$HOME/.agents/skills/impeccable/SKILL.md"
@@ -160,7 +175,9 @@ assert_contains "$test_root/install-command.txt" 'would remove undeclared Codex 
 assert_contains "$test_root/update.txt" 'install @openai/codex@latest only when outdated'
 assert_contains "$test_root/update.txt" 'latest tagged docker/mcp-gateway release'
 assert_contains "$test_root/update.txt" "refresh Docker's curated MCP catalogue"
-assert_contains "$test_root/update.txt" 'would remove all global Codex skills before installing the declared set'
+if grep -Fq 'would remove all global Codex skills before installing the declared set' "$test_root/update.txt"; then
+  fail "dry-run still proposes deleting all global skills"
+fi
 assert_contains "$test_root/update.txt" 'would remove undeclared Codex plugins'
 assert_contains "$test_root/update.txt" 'would remove undeclared Codex plugin marketplaces'
 assert_contains "$test_root/update.txt" 'would install every current skill from mattpocock/skills except obsidian-vault'
@@ -176,14 +193,11 @@ fi
 assert_contains "$test_root/update.txt" 'npm install -g @colbymchenry/codegraph'
 assert_contains "$test_root/update.txt" 'codex plugin marketplace upgrade ponytail'
 assert_contains "$test_root/update.txt" 'codex plugin add github@openai-curated'
-assert_contains "$test_root/update.txt" 'docker compose'
-assert_contains "$test_root/update.txt" 'penpot-mcp'
-assert_contains "$test_root/update.txt" 'PENPOT_MCP_VERSION=stable'
 assert_contains "$zsh_config" 'CODEX_MANAGED_MACHINE="$managed_machine" codex-sync update'
 assert_contains "$zsh_config" 'CODEX_MANAGED_MACHINE="$managed_machine" codex-sync apply'
-assert_contains "$zsh_config" 'npm view "$package" version --silent'
+assert_contains "$manager" 'npm view @openai/codex version --silent'
 assert_contains "$zsh_config" 'npm install -g --loglevel=error "${package}@latest"'
-assert_contains "$zsh_config" 'last-successful-update'
+assert_contains "$zsh_config" 'last-update-attempt'
 assert_contains "$zsh_config" 'command codex --yolo "$@"'
 assert_contains "$repo_root/install.sh" 'codex/managed/codex-sync" update'
 if rg -q 'Skipping unmanaged Codex' "$repo_root/install.sh"; then
@@ -261,6 +275,9 @@ EOF
 cat > "$mock_bin/npx" <<'EOF'
 #!/bin/sh
 printf '%s\n' "npx $*" >> "$MOCK_LOG"
+case "$*" in
+  'skills add mattpocock/skills '*) cat >/dev/null ;;
+esac
 EOF
 cat > "$mock_bin/docker" <<'EOF'
 #!/bin/sh
@@ -280,11 +297,57 @@ HOME="$install_home" CODEX_HOME="$install_home/.codex" \
 if rg -q '^\[mcp_servers\.unwanted\]$' "$install_home/.codex/config.toml"; then
   fail "installer preserved an unmanaged MCP server"
 fi
-assert_contains "$mock_log" "npx skills remove --skill * -g -a codex -y"
+assert_contains "$mock_log" 'npx skills add pbakaus/impeccable -g -a codex -s impeccable -y'
+if grep -Fq 'npx skills remove --skill * -g -a codex -y' "$mock_log"; then
+  fail "dependency update deletes all skills before fallible installs"
+fi
 assert_contains "$mock_log" 'plugin remove stale@old'
 assert_contains "$mock_log" 'plugin marketplace remove old'
 if grep -Fq 'plugin remove ponytail@ponytail' "$mock_log"; then
   fail "dependency reset removed a declared plugin"
 fi
+
+cx_home="$test_root/cx-home"
+cx_mock_bin="$test_root/cx-mock-bin"
+cx_log="$test_root/cx.log"
+mkdir -p "$cx_home/.config/codex" "$cx_mock_bin"
+printf '%s\n' macos-work-laptop > "$cx_home/.config/codex/managed-machine"
+cat > "$cx_mock_bin/codex" <<'EOF'
+#!/bin/sh
+if [ "${1:-}" = --version ]; then
+  printf '%s\n' 'codex-cli 0.145.0'
+else
+  printf '%s\n' "codex $*" >> "$CX_LOG"
+fi
+EOF
+cat > "$cx_mock_bin/npm" <<'EOF'
+#!/bin/sh
+exit 1
+EOF
+cat > "$cx_mock_bin/codex-sync" <<'EOF'
+#!/bin/sh
+printf '%s\n' "codex-sync $*" >> "$CX_LOG"
+printf '%s\n' 'simulated maintenance failure' >&2
+exit 1
+EOF
+chmod +x "$cx_mock_bin"/*
+HOME="$cx_home" PATH="$cx_mock_bin:$PATH" CX_LOG="$cx_log" ZSH_CONFIG="$zsh_config" \
+  zsh -fc 'eval "$(sed -n "/^cx() {/,/^}/p" "$ZSH_CONFIG")"; cx; cx' \
+  > "$test_root/cx.txt" 2>&1 || fail "cx refused to launch after maintenance failure"
+assert_contains "$cx_log" 'codex --yolo'
+assert_contains "$test_root/cx.txt" 'launching installed Codex'
+[[ "$(grep -Fc 'codex-sync update' "$cx_log")" -eq 1 ]] || \
+  fail "cx retried a failed full update before the 24-hour interval"
+
+install_codex_log="$test_root/install-codex.log"
+INSTALL_CODEX_LOG="$install_codex_log" MANAGER="$manager" bash -c '
+  set -euo pipefail
+  PATH=/usr/bin:/bin
+  dry_run=0
+  eval "$(sed -n "/^update_codex() {/,/^}/p" "$MANAGER")"
+  npm() { printf "%s\n" "$*" >> "$INSTALL_CODEX_LOG"; }
+  update_codex
+'
+assert_contains "$install_codex_log" 'install -g --loglevel=error @openai/codex@latest'
 
 echo "Codex managed configuration tests passed."

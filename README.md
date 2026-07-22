@@ -4,9 +4,7 @@
 
 The canonical shared, work, personal, and machine-specific Codex configuration lives in [`codex/managed`](codex/managed). Use `codex-sync` to apply, update, or validate Codex, shared skills, Ponytail hooks, MCP servers, and profile-specific integrations.
 
-The NUC profile also runs the persistent [Penpot MCP Docker service](docker/penpot-mcp), which serves the browser plugin on `nuc:4400`, its WebSocket bridge on `nuc:4402`, and a loopback-only MCP endpoint for Codex on port 4401.
-
-`codex-sync update` reconciles the complete current Matt Pocock skill suite, excluding `obsidian-vault`, so newly added upstream skills arrive without maintaining a static allow-list. It also removes Obsidian and Linear caches after plugin updates. The Penpot service keeps a local default package version in [`docker/penpot-mcp/.env`](docker/penpot-mcp/.env); NUC updates resolve the current stable release and pass that exact version into the build.
+`codex-sync update` reconciles the complete current Matt Pocock skill suite, excluding `obsidian-vault`, so newly added upstream skills arrive without maintaining a static allow-list. It also removes Obsidian and Linear caches after plugin updates.
 
 The shared skill baseline installs the maintained `juliusbrussee/caveman` skill and enables full intensity by default. Impeccable supplies the main UI workflow, supported by scoped Emil Kowalski motion skills, Vercel React best practices, and explicit-use design taste for landing pages or portfolios. Ponytail remains the single hook runtime.
 

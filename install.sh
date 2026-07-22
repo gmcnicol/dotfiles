@@ -57,7 +57,7 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
-repo_dir=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
+repo_dir=$(CDPATH='' cd "$(dirname "$0")" && pwd -P)
 backup_suffix=".bak.$(date +%Y%m%d%H%M%S)"
 tmux_plugin_dir="$HOME/.config/tmux/plugins"
 tpm_dir="$tmux_plugin_dir/tpm"

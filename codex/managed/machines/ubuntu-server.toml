@@ -6,7 +6,3 @@ trust_level = "trusted"
 
 [projects."/home/gareth/src/dotfiles"]
 trust_level = "trusted"
-
-[mcp_servers.penpot]
-url = "http://127.0.0.1:4401/mcp"
-startup_timeout_sec = 60

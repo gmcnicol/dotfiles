@@ -15,7 +15,7 @@ codex-sync doctor
 
 `codex-sync` asks which machine it is configuring when run interactively. The dotfiles installer asks the same question once and records the answer for `cx`, which passes the override only to its own sync calls. Direct interactive `codex-sync` calls still prompt. Set `CODEX_MANAGED_MACHINE` for non-interactive installs and syncs, or to render another machine's configuration.
 
-The shared `cx` shell function compares the installed Codex version with npm, silently installs `@openai/codex@latest` only when required, and applies managed configuration before every launch. It refreshes the slower dependencies when the last successful sync is more than 24 hours old. Set `CX_SYNC_ALWAYS=1` for a forced full update, or run `codex-sync update` directly at any time. A failed apply or update prevents `cx` from launching a drifted environment. Codex then starts with `--yolo`.
+The shared `cx` shell function installs `@openai/codex@latest` when Codex is missing and applies managed configuration before every launch. Once per 24 hours, the managed update compares the installed Codex version with npm before refreshing slower dependencies. Failed attempts are reported and throttled for the same period, but an existing Codex installation still launches. Set `CX_SYNC_ALWAYS=1` for a forced full update, or run `codex-sync update` directly at any time. Codex then starts with `--yolo`.
 
 `apply` concatenates three non-overlapping TOML layers and generates the Docker MCP Gateway entry from server manifests:
 
@@ -26,11 +26,11 @@ The shared `cx` shell function compares the installed Codex version with npm, si
 
 It validates the result with Codex's strict configuration parser, backs up a changed active configuration, and installs `config.toml` and `AGENTS.md` under `$CODEX_HOME`.
 
-`update` applies the configuration, refreshes the tagged Docker MCP Gateway release on Linux, downloads Docker's curated MCP catalogue, updates Codex through npm when required, replaces global Codex skills with the declared set, and removes undeclared plugins and plugin marketplaces. Docker Desktop manages the gateway plugin on macOS. During each apply, current hook hashes are trusted only when their plugin is declared in `dependencies.conf`; unrelated project hooks retain Codex's normal trust prompts.
+`update` applies the configuration, refreshes the tagged Docker MCP Gateway release on Linux, downloads Docker's curated MCP catalogue, updates Codex through npm when required, installs declared skills before removing source-owned stale entries, and removes undeclared plugins and plugin marketplaces. It never deletes every global skill before fallible network installs. Docker Desktop manages the gateway plugin on macOS. During each apply, current hook hashes are trusted only when their plugin is declared in `dependencies.conf`; unrelated project hooks retain Codex's normal trust prompts.
 
 The dotfiles installer runs this full update. Existing Codex configuration is backed up and replaced, so rerunning `install.sh` reconciles a machine rather than preserving stale MCP servers, skills, plugins, or hooks.
 
-`doctor` validates the managed installation and required commands without checking user-owned MCP credentials or runtime settings, then runs `codex doctor` when an active configuration exists.
+`doctor` reads and validates the managed installation without changing it. Missing user-owned MCP credentials and runtime settings are informational, not failures. It runs `codex doctor` when an active configuration exists.
 
 ## Shared SDLC baseline
 
@@ -52,7 +52,11 @@ Skills previously installed directly under `$CODEX_HOME/skills` are mapped to th
 
 The updater compares Matt-owned entries in the Skills CLI lock with the current upstream suite, removing skills deleted upstream so old machines do not retain a different set indefinitely. Its exclusion list prevents `obsidian-vault` from being installed even temporarily, while the legacy removal entry cleans it from machines that predate source metadata. Applying or checking the managed configuration also purges generated Linear and Obsidian marketplace cache directories.
 
-`ui-ux-pro-max` is intentionally removed before Impeccable is installed. Impeccable owns broad product and brand design work. The Emil skills activate for motion-specific tasks, Vercel's skill owns React performance guidance, and `design-taste-frontend` should be invoked explicitly for landing pages or portfolios rather than as a second general design system.
+`ui-ux-pro-max` is removed only after Impeccable is installed and verified. Impeccable owns broad product and brand design work. The Emil skills activate for motion-specific tasks, Vercel's skill owns React performance guidance, and `design-taste-frontend` should be invoked explicitly for landing pages or portfolios rather than as a second general design system.
+
+## Tests
+
+`tests/test-codex-managed.sh` exercises real rendering plus failure paths for dependency input, clean Codex installation, and launcher availability. `tests/test-codex-managed-containers.sh` runs the full installer and managed update filesystem flow for Ubuntu and Omarchy profiles in Ubuntu and Arch containers. It exercises both macOS profiles with Bash 3.2 plus simulated Darwin and Docker Desktop commands. Network installers and Docker are replaced with deterministic local commands; the host suite tests the Python helpers. Docker cannot reproduce a real macOS kernel or BSD userland, so final native macOS validation still runs on a Mac.
 
 ## Secrets
 
@@ -77,7 +81,3 @@ Track only authored server selections, catalogues, registry selections, profiles
 The shared Docker MCP set is Context7, Notion, and Playwright. Every gateway invocation explicitly uses `docker-official.json`, refreshed from Docker's curated catalogue URL by `codex-sync update`. The refresh removes the Linear and Obsidian server definitions before installing the local catalogue. GitHub is supplied consistently through the shared OpenAI-curated GitHub plugin rather than duplicated inside the gateway. The work profile adds Atlassian for Jira and Confluence through the same Docker MCP Gateway transport. The updater rejects selected servers that are missing from the curated catalogue. A capability must not be configured as a direct MCP on one machine and a Docker MCP on another. Add it to the appropriate Docker server manifest or leave it out until a Docker-backed definition exists.
 
 Docker Desktop 4.59 or later supplies the MCP Toolkit on macOS when the feature is enabled. Docker Engine hosts need the `docker-mcp` CLI plugin installed under `~/.docker/cli-plugins`. `codex-sync doctor` reports whether the gateway plugin is available.
-
-## NUC Penpot service
-
-The Ubuntu server profile adds one direct HTTP MCP entry for Penpot at `http://127.0.0.1:4401/mcp`. The endpoint is supplied by the persistent Docker service in `docker/penpot-mcp`, so Penpot remains container-installed without pretending its browser-facing lifecycle fits Docker MCP Gateway. `codex-sync update` resolves the current `@penpot/mcp@stable` version, rebuilds the image, and recreates the service. `codex-sync doctor` verifies the LAN plugin manifest, advertised WebSocket address, and MCP handshake.

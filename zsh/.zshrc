@@ -352,9 +352,8 @@ alias cmau='claude mcp add --scope user'
 unalias cx 2>/dev/null
 cx() {
   local package="@openai/codex"
-  local current_version latest_version
   local sync_state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/codex-sync"
-  local sync_stamp="$sync_state_dir/last-successful-update"
+  local sync_stamp="$sync_state_dir/last-update-attempt"
   local machine_file="$HOME/.config/codex/managed-machine"
   local managed_machine
   local sync_due=0
@@ -365,37 +364,29 @@ cx() {
       return 127
     fi
     npm install -g --loglevel=error "${package}@latest" || return
-  else
-    current_version="$(codex --version)" || return
-    current_version="${current_version##* }"
-    latest_version="$(npm view "$package" version --silent)" || return
-    if [[ "$current_version" != "$latest_version" ]]; then
-      npm install -g --loglevel=error "${package}@latest" || return
-    fi
   fi
 
   if ! command -v codex-sync >/dev/null 2>&1; then
-    print -u2 "cx: codex-sync is required; run the dotfiles installer"
-    return 127
-  fi
-  if [[ ! -r "$machine_file" ]] || ! read -r managed_machine < "$machine_file"; then
-    print -u2 "cx: managed machine is missing; run the dotfiles installer"
-    return 1
-  fi
-
-  if [[ "${CX_SYNC_ALWAYS:-0}" == 1 || ! -f "$sync_stamp" ]]; then
-    sync_due=1
-  elif [[ -z "$(find "$sync_stamp" -mmin -1440 -print 2>/dev/null)" ]]; then
-    sync_due=1
-  fi
-
-  if (( sync_due )); then
-    print "cx: synchronising Codex configuration and dependencies"
-    CODEX_MANAGED_MACHINE="$managed_machine" codex-sync update || return
-    mkdir -p "$sync_state_dir" || return
-    touch "$sync_stamp" || return
+    print -u2 "cx: codex-sync unavailable; launching installed Codex"
+  elif [[ ! -r "$machine_file" ]] || ! read -r managed_machine < "$machine_file"; then
+    print -u2 "cx: managed machine missing; launching installed Codex"
   else
-    CODEX_MANAGED_MACHINE="$managed_machine" codex-sync apply || return
+    if [[ "${CX_SYNC_ALWAYS:-0}" == 1 || ! -f "$sync_stamp" ]]; then
+      sync_due=1
+    elif [[ -z "$(find "$sync_stamp" -mmin -1440 -print 2>/dev/null)" ]]; then
+      sync_due=1
+    fi
+
+    if (( sync_due )); then
+      print "cx: synchronising Codex configuration and dependencies"
+      if ! CODEX_MANAGED_MACHINE="$managed_machine" codex-sync update; then
+        print -u2 "cx: sync failed; launching installed Codex"
+      fi
+      mkdir -p "$sync_state_dir" && touch "$sync_stamp" || \
+        print -u2 "cx: could not record sync attempt"
+    elif ! CODEX_MANAGED_MACHINE="$managed_machine" codex-sync apply; then
+      print -u2 "cx: config apply failed; launching installed Codex"
+    fi
   fi
 
   command codex --yolo "$@"

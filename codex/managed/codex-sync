@@ -9,7 +9,6 @@ while [[ -L "$script_source" ]]; do
 done
 managed_root="$(cd "$(dirname "$script_source")" && pwd)"
 codex_home="${CODEX_HOME:-$HOME/.codex}"
-penpot_compose_file="$managed_root/../../docker/penpot-mcp/compose.yaml"
 
 usage() {
   cat <<'EOF'
@@ -282,6 +281,10 @@ update_codex() {
     echo "would compare the installed Codex version with npm and install @openai/codex@latest only when outdated"
   else
     local current_version latest_version
+    if ! command -v codex >/dev/null 2>&1; then
+      npm install -g --loglevel=error @openai/codex@latest
+      return
+    fi
     current_version="$(codex --version)"
     current_version="${current_version##* }"
     latest_version="$(npm view @openai/codex version --silent)"
@@ -312,7 +315,7 @@ apply_config() {
 }
 
 update_dependencies() {
-  while IFS='|' read -r kind source selection; do
+  while IFS='|' read -r kind source selection <&3 || [[ -n "$kind$source$selection" ]]; do
     [[ -n "$kind" && "${kind#\#}" == "$kind" ]] || continue
     case "$kind" in
       skill-repo-except)
@@ -333,18 +336,15 @@ update_dependencies() {
         ;;
       *) echo "Unknown dependency kind: $kind" >&2; return 1 ;;
     esac
-  done < "$managed_root/dependencies.conf"
+  done 3< "$managed_root/dependencies.conf"
 }
 
-reset_managed_dependencies() {
+prune_undeclared_plugins() {
   if (( dry_run )); then
-    echo "would remove all global Codex skills before installing the declared set"
     echo "would remove undeclared Codex plugins"
     echo "would remove undeclared Codex plugin marketplaces"
     return
   fi
-
-  npx skills remove --skill '*' -g -a codex -y
 
   local plugin status rest
   while read -r plugin status rest; do
@@ -353,8 +353,8 @@ reset_managed_dependencies() {
       codex plugin remove "$plugin"
   done < <(codex plugin list)
 
-  local marketplace root
-  while read -r marketplace root; do
+  local marketplace
+  while read -r marketplace _; do
     [[ "$marketplace" != "MARKETPLACE" && "$marketplace" != "openai-curated" ]] || continue
     grep -Fq "plugin-marketplace|$marketplace|" "$managed_root/dependencies.conf" || \
       codex plugin marketplace remove "$marketplace"
@@ -403,7 +403,7 @@ install_skill_repo_except() {
     return 1
   fi
 
-  if ! npx skills add "$source" -g -a codex -s "${selected_skills[@]}" -y; then
+  if ! npx skills add "$source" -g -a codex -s "${selected_skills[@]}" -y </dev/null; then
     find "$checkout" -depth -delete
     return 1
   fi
@@ -517,71 +517,6 @@ PY
   fi
 }
 
-update_machine_services() {
-  local machine="$1"
-  [[ "$machine" == ubuntu-server ]] || return 0
-
-  [[ -f "$penpot_compose_file" ]] || {
-    echo "Missing Penpot MCP Compose definition: $penpot_compose_file" >&2
-    return 1
-  }
-
-  local penpot_version
-  if (( dry_run )); then
-    penpot_version=stable
-  else
-    penpot_version="$(npm view @penpot/mcp@stable version 2>/dev/null)"
-    [[ -n "$penpot_version" ]] || {
-      echo "Unable to resolve @penpot/mcp@stable." >&2
-      return 1
-    }
-  fi
-
-  run_or_print env "PENPOT_MCP_VERSION=$penpot_version" \
-    docker compose -f "$penpot_compose_file" build --pull
-  run_or_print env "PENPOT_MCP_VERSION=$penpot_version" \
-    docker compose -f "$penpot_compose_file" up -d --remove-orphans
-}
-
-doctor_machine_services() {
-  local machine="$1"
-  [[ "$machine" == ubuntu-server ]] || return 0
-
-  local failed=0
-  if docker compose -f "$penpot_compose_file" ps --status running --services 2>/dev/null | \
-    grep -Fxq penpot-mcp; then
-    echo "found: Penpot MCP Docker service"
-  else
-    echo "missing: running Penpot MCP Docker service"
-    failed=1
-  fi
-  if curl -fsS --max-time 5 http://nuc:4400/manifest.json >/dev/null; then
-    echo "passed: Penpot plugin manifest endpoint"
-  else
-    echo "failed: Penpot plugin manifest endpoint"
-    failed=1
-  fi
-  if curl -fsS --max-time 5 http://nuc:4400/index.js | grep -Fq 'ws://nuc:4402'; then
-    echo "passed: Penpot plugin WebSocket address"
-  else
-    echo "failed: Penpot plugin WebSocket address"
-    failed=1
-  fi
-  if curl -fsS --max-time 5 \
-    -X POST http://127.0.0.1:4401/mcp \
-    -H 'Content-Type: application/json' \
-    -H 'Accept: application/json, text/event-stream' \
-    -H 'MCP-Protocol-Version: 2025-03-26' \
-    --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"codex-sync-doctor","version":"1"}}}' | \
-    grep -Fq '"serverInfo"'; then
-    echo "passed: Penpot MCP HTTP endpoint"
-  else
-    echo "failed: Penpot MCP HTTP endpoint"
-    failed=1
-  fi
-  return "$failed"
-}
-
 doctor() {
   local machine="$1" profile="$2" rendered
   local failures=0
@@ -631,14 +566,12 @@ doctor() {
     echo "found: local Docker MCP secrets file"
   else
     docker_secrets="$HOME/.config/codex/docker-mcp.env"
-    echo "missing: $docker_secrets"
-    failures=1
+    echo "not configured: $docker_secrets"
   fi
 
   local docker_config="$HOME/.docker/mcp/codex-managed-config.yaml"
   if [[ ! -f "$docker_config" ]]; then
-    echo "missing: $docker_config"
-    failures=1
+    echo "not configured: $docker_config"
   fi
 
   if ! npx skills list --global --json >/dev/null 2>&1; then
@@ -664,14 +597,12 @@ doctor() {
   fi
 
   if [[ -f "$codex_home/config.toml" ]]; then
-    codex doctor --summary --no-color || failures=1
+    codex doctor --summary --no-color || \
+      echo "Codex runtime doctor reported issues; installation checks continue."
   else
     echo "Codex configuration is not installed at $codex_home/config.toml."
     failures=1
   fi
-  doctor_machine_services "$machine" || failures=1
-  remove_legacy_skill_installs || failures=1
-  purge_removed_integrations || failures=1
   return "$failures"
 }
 
@@ -701,9 +632,8 @@ case "$command_name" in
       apply_config "$machine" "$profile"
     fi
     update_docker_mcp "$profile"
-    update_machine_services "$machine"
-    reset_managed_dependencies
     update_dependencies
+    prune_undeclared_plugins
     remove_legacy_skill_installs
     if (( ! dry_run )); then
       purge_removed_integrations

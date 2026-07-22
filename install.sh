@@ -16,6 +16,7 @@ Installs this repo into the expected config locations:
   ~/.zshenv                -> ~/.config/zsh/.zshenv
   ~/.codex/config.toml     from shared, profile, and machine layers
   ~/.codex/AGENTS.md       from shared Codex instructions
+  ~/.config/codex/managed-machine for cx's machine-specific sync calls
   ~/.local/bin/codex-sync -> codex/managed/codex-sync
 
 It also creates ~/.zshrc.local and appends a source line for the shared zsh
@@ -23,6 +24,9 @@ config to ~/.zshrc.
 
 Set DOTFILES_INSTALL_GHOSTTY=1 to force Ghostty config installation on machines
 where Ghostty is not installed.
+
+The installer asks which Codex machine profile to use. Set CODEX_MANAGED_MACHINE
+to supply it in non-interactive installs.
 
 Use --headless to skip Ghostty config even when Ghostty is installed.
 
@@ -117,7 +121,45 @@ append_once() {
   info "Updated: $file"
 }
 
-mkdir -p "$HOME/.config/aerospace" "$HOME/.config/tmux" "$HOME/.config/zsh" "$tmux_plugin_dir"
+select_codex_machine() {
+  if [ -n "${CODEX_MANAGED_MACHINE:-}" ]; then
+    case "$CODEX_MANAGED_MACHINE" in
+      macos-work-laptop|macos-personal-macmini|omarchy-laptop|ubuntu-server)
+        printf '%s\n' "$CODEX_MANAGED_MACHINE"
+        return
+        ;;
+      *)
+        printf 'Unsupported CODEX_MANAGED_MACHINE: %s\n' "$CODEX_MANAGED_MACHINE" >&2
+        return 1
+        ;;
+    esac
+  fi
+
+  if [ ! -t 0 ]; then
+    printf 'CODEX_MANAGED_MACHINE is required in non-interactive installs.\n' >&2
+    return 1
+  fi
+
+  while :; do
+    printf '%s\n' \
+      'Select this Codex machine:' \
+      '  1) macos-work-laptop' \
+      '  2) macos-personal-macmini' \
+      '  3) omarchy-laptop' \
+      '  4) ubuntu-server' >&2
+    printf 'Selection: ' >&2
+    IFS= read -r choice
+    case "$choice" in
+      1|macos-work-laptop) printf '%s\n' macos-work-laptop; return ;;
+      2|macos-personal-macmini) printf '%s\n' macos-personal-macmini; return ;;
+      3|omarchy-laptop) printf '%s\n' omarchy-laptop; return ;;
+      4|ubuntu-server) printf '%s\n' ubuntu-server; return ;;
+      *) printf 'Invalid selection.\n' >&2 ;;
+    esac
+  done
+}
+
+mkdir -p "$HOME/.config/aerospace" "$HOME/.config/codex" "$HOME/.config/tmux" "$HOME/.config/zsh" "$tmux_plugin_dir"
 
 "$repo_dir/aerospace/render-config.sh"
 link_path "$repo_dir/aerospace/pull-app.sh" "$HOME/.config/aerospace/pull-app.sh"
@@ -141,6 +183,9 @@ touch "$HOME/.zshrc.local"
 chmod 600 "$HOME/.zshrc.local"
 append_once 'source "$HOME/.config/zsh/.zshrc"' "$HOME/.zshrc" '# Personal zsh customisations'
 
+codex_machine=$(select_codex_machine)
+printf '%s\n' "$codex_machine" > "$HOME/.config/codex/managed-machine"
+chmod 600 "$HOME/.config/codex/managed-machine"
 link_path "$repo_dir/codex/managed/codex-sync" "$HOME/.local/bin/codex-sync"
 
 if command -v codex >/dev/null 2>&1; then
@@ -156,7 +201,7 @@ if command -v codex >/dev/null 2>&1; then
   if [ "$unmanaged_codex" = true ] && [ "$force" != true ]; then
     info "Skipping unmanaged Codex config or instructions; re-run with --force to back them up and replace them"
   else
-    "$repo_dir/codex/managed/codex-sync" apply
+    CODEX_MANAGED_MACHINE="$codex_machine" "$repo_dir/codex/managed/codex-sync" apply
   fi
 else
   info "Skipping Codex configuration; install Codex first"

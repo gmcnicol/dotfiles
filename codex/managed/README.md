@@ -10,9 +10,9 @@ codex-sync update
 codex-sync doctor
 ```
 
-`codex-sync` detects the machine from its hostname. Set `CODEX_MANAGED_MACHINE` to override detection or to test another machine's render.
+`codex-sync` asks which machine it is configuring when run interactively. The dotfiles installer asks the same question once and records the answer for `cx`, which passes the override only to its own sync calls. Direct interactive `codex-sync` calls still prompt. Set `CODEX_MANAGED_MACHINE` for non-interactive installs and syncs, or to render another machine's configuration.
 
-The shared `cx` shell function applies managed configuration before every launch and runs `codex-sync update` when the last successful sync is more than 24 hours old. Set `CX_SYNC_ALWAYS=1` for a forced pre-launch update, or run `codex-sync update` directly at any time. A failed apply or update prevents `cx` from launching a drifted environment. Codex then starts with `--yolo`, overriding the managed approval and sandbox policy.
+The shared `cx` shell function compares the installed Codex version with npm, silently installs `@openai/codex@latest` only when required, and applies managed configuration before every launch. It refreshes the slower dependencies when the last successful sync is more than 24 hours old. Set `CX_SYNC_ALWAYS=1` for a forced full update, or run `codex-sync update` directly at any time. A failed apply or update prevents `cx` from launching a drifted environment. Codex then starts with `--yolo`.
 
 `apply` concatenates three non-overlapping TOML layers and generates the Docker MCP Gateway entry from server manifests:
 
@@ -23,7 +23,7 @@ The shared `cx` shell function applies managed configuration before every launch
 
 It validates the result with Codex's strict configuration parser, backs up a changed active configuration, and installs `config.toml` and `AGENTS.md` under `$CODEX_HOME`.
 
-`update` applies the configuration, refreshes the tagged Docker MCP Gateway release on Linux, downloads Docker's curated MCP catalogue, updates Codex, updates globally installed Skills CLI skills, refreshes the Ponytail marketplace, and installs or refreshes Ponytail. Docker Desktop manages the gateway plugin on macOS. Ponytail supplies the shared lifecycle hooks. Changed hooks must be reviewed with `/hooks` before Codex trusts them.
+`update` applies the configuration, refreshes the tagged Docker MCP Gateway release on Linux, downloads Docker's curated MCP catalogue, updates Codex through npm when required, updates globally installed Skills CLI skills, refreshes the Ponytail marketplace, and installs or refreshes Ponytail. Docker Desktop manages the gateway plugin on macOS. During each apply, current hook hashes are trusted only when their plugin is declared in `dependencies.conf`; unrelated project and plugin hooks retain Codex's normal trust prompts.
 
 `doctor` validates the render, checks required commands, and runs `codex doctor` when an active configuration exists.
 

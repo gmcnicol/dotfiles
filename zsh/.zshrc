@@ -351,8 +351,11 @@ alias cmau='claude mcp add --scope user'
 unalias cx 2>/dev/null
 cx() {
   local package="@openai/codex"
+  local current_version latest_version
   local sync_state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/codex-sync"
   local sync_stamp="$sync_state_dir/last-successful-update"
+  local machine_file="$HOME/.config/codex/managed-machine"
+  local managed_machine
   local sync_due=0
 
   if ! command -v codex >/dev/null 2>&1; then
@@ -360,13 +363,23 @@ cx() {
       print -u2 "cx: npm is required to install ${package}"
       return 127
     fi
-    print "cx: installing ${package}@latest"
-    npm install -g "${package}@latest" || return
+    npm install -g --loglevel=error "${package}@latest" || return
+  else
+    current_version="$(codex --version)" || return
+    current_version="${current_version##* }"
+    latest_version="$(npm view "$package" version --silent)" || return
+    if [[ "$current_version" != "$latest_version" ]]; then
+      npm install -g --loglevel=error "${package}@latest" || return
+    fi
   fi
 
   if ! command -v codex-sync >/dev/null 2>&1; then
     print -u2 "cx: codex-sync is required; run the dotfiles installer"
     return 127
+  fi
+  if [[ ! -r "$machine_file" ]] || ! read -r managed_machine < "$machine_file"; then
+    print -u2 "cx: managed machine is missing; run the dotfiles installer"
+    return 1
   fi
 
   if [[ "${CX_SYNC_ALWAYS:-0}" == 1 || ! -f "$sync_stamp" ]]; then
@@ -377,11 +390,11 @@ cx() {
 
   if (( sync_due )); then
     print "cx: synchronising Codex configuration and dependencies"
-    codex-sync update || return
+    CODEX_MANAGED_MACHINE="$managed_machine" codex-sync update || return
     mkdir -p "$sync_state_dir" || return
     touch "$sync_stamp" || return
   else
-    codex-sync apply || return
+    CODEX_MANAGED_MACHINE="$managed_machine" codex-sync apply || return
   fi
 
   command codex --yolo "$@"

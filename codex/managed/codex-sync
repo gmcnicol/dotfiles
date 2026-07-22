@@ -20,7 +20,8 @@ Commands:
   update   Apply configuration, update Codex, skills, and Ponytail
   doctor   Validate rendered configuration and inspect the active installation
 
-Override auto-detection with CODEX_MANAGED_MACHINE. Supported values:
+Set CODEX_MANAGED_MACHINE for non-interactive use. If unset in a terminal,
+codex-sync asks which machine it is running on. Supported values:
   macos-work-laptop | macos-personal-macmini | omarchy-laptop | ubuntu-server
 EOF
 }
@@ -31,19 +32,28 @@ detect_machine() {
     return
   fi
 
-  case "$(hostname -s 2>/dev/null || hostname)" in
-    MacBookPro*) printf '%s\n' macos-work-laptop ;;
-    Gareths-Mini*) printf '%s\n' macos-personal-macmini ;;
-    nuc) printf '%s\n' ubuntu-server ;;
-    *)
-      if [[ -e /etc/omarchy-release || -d "$HOME/.local/share/omarchy" ]]; then
-        printf '%s\n' omarchy-laptop
-      else
-        echo "Unable to identify this machine. Set CODEX_MANAGED_MACHINE." >&2
-        return 1
-      fi
-      ;;
-  esac
+  if [[ ! -t 0 ]]; then
+    echo "CODEX_MANAGED_MACHINE is required in non-interactive use." >&2
+    return 1
+  fi
+
+  local choice
+  local options=(
+    macos-work-laptop
+    macos-personal-macmini
+    omarchy-laptop
+    ubuntu-server
+  )
+  PS3="Select this machine: "
+  select choice in "${options[@]}"; do
+    if [[ -n "${choice:-}" ]]; then
+      printf '%s\n' "$choice"
+      return
+    fi
+    echo "Invalid selection." >&2
+  done
+  echo "No machine selected." >&2
+  return 1
 }
 
 profile_for_machine() {
@@ -105,6 +115,9 @@ render_config() {
     printf 'args = ["mcp", "gateway", "run", "--catalog", "docker-official.json", "--config", "%s", "--secrets", "%s", "--servers", "%s"]\n' "$docker_config" "$docker_secrets" "$docker_servers"
     printf 'startup_timeout_sec = %s\n' "$docker_timeout"
   } > "$output"
+
+  "$managed_root/render-managed-hook-trust.py" \
+    "$managed_root/dependencies.conf" "$managed_root/../.." >> "$output"
 
   validate_config "$output"
 }
@@ -252,6 +265,20 @@ run_or_print() {
     printf '\n'
   else
     "$@" </dev/null
+  fi
+}
+
+update_codex() {
+  if (( dry_run )); then
+    echo "would compare the installed Codex version with npm and install @openai/codex@latest only when outdated"
+  else
+    local current_version latest_version
+    current_version="$(codex --version)"
+    current_version="${current_version##* }"
+    latest_version="$(npm view @openai/codex version --silent)"
+    if [[ "$current_version" != "$latest_version" ]]; then
+      npm install -g --loglevel=error @openai/codex@latest
+    fi
   fi
 }
 
@@ -655,7 +682,7 @@ profile="$(profile_for_machine "$machine")"
 case "$command_name" in
   apply) apply_config "$machine" "$profile" ;;
   update)
-    run_or_print codex update
+    update_codex
     if (( dry_run )); then
       echo "would apply Codex configuration for $machine ($profile)"
     else
@@ -667,6 +694,7 @@ case "$command_name" in
     remove_legacy_skill_installs
     if (( ! dry_run )); then
       purge_removed_integrations
+      apply_config "$machine" "$profile"
     fi
     ;;
   doctor) doctor "$machine" "$profile" ;;

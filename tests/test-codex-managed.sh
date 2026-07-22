@@ -41,6 +41,14 @@ assert_mcp_shape() {
 export HOME="$test_root/home"
 export CODEX_HOME="$test_root/codex-home"
 mkdir -p "$HOME"
+
+if env -u CODEX_MANAGED_MACHINE "$manager" apply --dry-run \
+  > /dev/null 2> "$test_root/missing-machine.txt"; then
+  fail "non-interactive apply succeeded without CODEX_MANAGED_MACHINE"
+fi
+assert_contains "$test_root/missing-machine.txt" \
+  'CODEX_MANAGED_MACHINE is required in non-interactive use.'
+
 export CODEX_MANAGED_MACHINE="macos-work-laptop"
 
 mkdir -p \
@@ -85,6 +93,7 @@ for machine in omarchy-laptop ubuntu-server; do
 done
 
 assert_root_setting "$test_root/work.toml" 'approval_policy = "on-request"'
+assert_root_setting "$test_root/work.toml" 'check_for_update_on_startup = false'
 assert_mcp_shape "$test_root/work.toml" 'context7,notion,playwright,atlassian' 2
 for personal_config in \
   "$test_root/personal.toml" \
@@ -93,6 +102,7 @@ for personal_config in \
   assert_mcp_shape "$personal_config" 'context7,notion,playwright' 2
 done
 assert_root_setting "$test_root/ubuntu-server.toml" 'sandbox_mode = "workspace-write"'
+assert_contains "$test_root/ubuntu-server.toml" '[projects."/home/gareth/src/dotfiles"]'
 assert_mcp_shape "$test_root/ubuntu-server.toml" 'context7,notion,playwright' 3
 assert_contains "$test_root/ubuntu-server.toml" '[mcp_servers.penpot]'
 assert_contains "$test_root/ubuntu-server.toml" 'url = "http://127.0.0.1:4401/mcp"'
@@ -113,11 +123,25 @@ assert_contains "$test_root/penpot-compose.yaml" 'published: "4402"'
 assert_contains "$penpot_service/Dockerfile" 'ARG PENPOT_MCP_VERSION'
 assert_contains "$penpot_service/.env" 'PENPOT_MCP_VERSION=2.15.4'
 
+cat > "$test_root/hooks.json" <<'EOF'
+[
+  {"pluginId":"ponytail@ponytail","key":"ponytail@ponytail:hooks/hooks.json:session_start:0:0","currentHash":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+  {"pluginId":"other@other","key":"other@other:hooks/hooks.json:session_start:0:0","currentHash":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
+]
+EOF
+python3 "$repo_root/codex/managed/render-managed-hook-trust.py" \
+  "$repo_root/codex/managed/dependencies.conf" "$repo_root" "$test_root/hooks.json" \
+  > "$test_root/hook-trust.toml"
+assert_contains "$test_root/hook-trust.toml" '[hooks.state."ponytail@ponytail:'
+if rg -q 'other@other' "$test_root/hook-trust.toml"; then
+  fail "managed config trusted a hook whose plugin is absent from dependencies.conf"
+fi
+
 export CODEX_MANAGED_MACHINE="ubuntu-server"
 mkdir -p "$CODEX_HOME/skills/ui-ux-pro-max" "$HOME/.agents/skills/impeccable"
 touch "$CODEX_HOME/skills/ui-ux-pro-max/SKILL.md" "$HOME/.agents/skills/impeccable/SKILL.md"
 "$manager" update --dry-run > "$test_root/update.txt"
-assert_contains "$test_root/update.txt" 'codex update'
+assert_contains "$test_root/update.txt" 'install @openai/codex@latest only when outdated'
 assert_contains "$test_root/update.txt" 'latest tagged docker/mcp-gateway release'
 assert_contains "$test_root/update.txt" "refresh Docker's curated MCP catalogue"
 assert_contains "$test_root/update.txt" 'would install every current skill from mattpocock/skills except obsidian-vault'
@@ -139,10 +163,15 @@ assert_contains "$test_root/update.txt" 'codex plugin add github@openai-curated'
 assert_contains "$test_root/update.txt" 'docker compose'
 assert_contains "$test_root/update.txt" 'penpot-mcp'
 assert_contains "$test_root/update.txt" 'PENPOT_MCP_VERSION=stable'
-assert_contains "$zsh_config" 'codex-sync update'
-assert_contains "$zsh_config" 'codex-sync apply'
+assert_contains "$zsh_config" 'CODEX_MANAGED_MACHINE="$managed_machine" codex-sync update'
+assert_contains "$zsh_config" 'CODEX_MANAGED_MACHINE="$managed_machine" codex-sync apply'
+assert_contains "$zsh_config" 'npm view "$package" version --silent'
+assert_contains "$zsh_config" 'npm install -g --loglevel=error "${package}@latest"'
 assert_contains "$zsh_config" 'last-successful-update'
 assert_contains "$zsh_config" 'command codex --yolo "$@"'
+if rg -q 'codex update|dangerously-bypass-hook-trust' "$manager" "$zsh_config"; then
+  fail "managed launcher still uses Codex self-update or blanket hook trust"
+fi
 if grep -Fq -- '-quit' "$zsh_config"; then
   fail "cx uses a GNU-only find option"
 fi

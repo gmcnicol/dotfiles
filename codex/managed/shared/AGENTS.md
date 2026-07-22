@@ -1,5 +1,9 @@
 # Shared Codex instructions
 
+## Communication
+
+Use the installed `caveman` skill at full intensity by default for every response. Keep it active until the user says `stop caveman` or `normal mode`.
+
 ## Documentation
 
 Use the `ctx7` CLI for current documentation whenever a task concerns a library, framework, SDK, API, CLI tool, or cloud service, including familiar technologies.

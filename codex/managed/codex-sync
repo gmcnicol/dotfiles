@@ -313,13 +313,6 @@ update_dependencies() {
         IFS=',' read -r -a skills <<< "$selection"
         run_or_print npx skills add "$source" -g -a codex -s "${skills[@]}" -y
         ;;
-      skill-remove)
-        IFS=',' read -r -a skills_to_remove <<< "$source"
-        local removed_skill
-        for removed_skill in "${skills_to_remove[@]}"; do
-          run_or_print npx skills remove "$removed_skill" -g -a codex -y
-        done
-        ;;
       npm-global)
         run_or_print npm install -g "$source"
         ;;
@@ -332,8 +325,31 @@ update_dependencies() {
       *) echo "Unknown dependency kind: $kind" >&2; return 1 ;;
     esac
   done < "$managed_root/dependencies.conf"
+}
 
-  run_or_print npx skills update -g -y
+reset_managed_dependencies() {
+  if (( dry_run )); then
+    echo "would remove all global Codex skills before installing the declared set"
+    echo "would remove undeclared Codex plugins"
+    echo "would remove undeclared Codex plugin marketplaces"
+    return
+  fi
+
+  npx skills remove --skill '*' -g -a codex -y
+
+  local plugin status rest
+  while read -r plugin status rest; do
+    [[ "$status" == "installed," ]] || continue
+    grep -Fq "plugin|$plugin|" "$managed_root/dependencies.conf" || \
+      codex plugin remove "$plugin"
+  done < <(codex plugin list)
+
+  local marketplace root
+  while read -r marketplace root; do
+    [[ "$marketplace" != "MARKETPLACE" && "$marketplace" != "openai-curated" ]] || continue
+    grep -Fq "plugin-marketplace|$marketplace|" "$managed_root/dependencies.conf" || \
+      codex plugin marketplace remove "$marketplace"
+  done < <(codex plugin marketplace list)
 }
 
 install_skill_repo_except() {
@@ -690,6 +706,7 @@ case "$command_name" in
     fi
     update_docker_mcp "$profile"
     update_machine_services "$machine"
+    reset_managed_dependencies
     update_dependencies
     remove_legacy_skill_installs
     if (( ! dry_run )); then

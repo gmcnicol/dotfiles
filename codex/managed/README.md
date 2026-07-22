@@ -23,7 +23,9 @@ The shared `cx` shell function compares the installed Codex version with npm, si
 
 It validates the result with Codex's strict configuration parser, backs up a changed active configuration, and installs `config.toml` and `AGENTS.md` under `$CODEX_HOME`.
 
-`update` applies the configuration, refreshes the tagged Docker MCP Gateway release on Linux, downloads Docker's curated MCP catalogue, updates Codex through npm when required, updates globally installed Skills CLI skills, refreshes the Ponytail marketplace, and installs or refreshes Ponytail. Docker Desktop manages the gateway plugin on macOS. During each apply, current hook hashes are trusted only when their plugin is declared in `dependencies.conf`; unrelated project and plugin hooks retain Codex's normal trust prompts.
+`update` applies the configuration, refreshes the tagged Docker MCP Gateway release on Linux, downloads Docker's curated MCP catalogue, updates Codex through npm when required, replaces global Codex skills with the declared set, and removes undeclared plugins and plugin marketplaces. Docker Desktop manages the gateway plugin on macOS. During each apply, current hook hashes are trusted only when their plugin is declared in `dependencies.conf`; unrelated project hooks retain Codex's normal trust prompts.
+
+The dotfiles installer runs this full update. Existing Codex configuration is backed up and replaced, so rerunning `install.sh` reconciles a machine rather than preserving stale MCP servers, skills, plugins, or hooks.
 
 `doctor` validates the render, checks required commands, and runs `codex doctor` when an active configuration exists.
 
@@ -34,7 +36,7 @@ It validates the result with Codex's strict configuration parser, backs up a cha
 - Ponytail instructions and lifecycle hooks
 - GitHub plugin
 - Matt Pocock's current skills suite, dynamically discovered with the Obsidian integration excluded
-- `juliusbrussee/caveman` for opt-in token-efficient responses without another hook runtime
+- `juliusbrussee/caveman` at full intensity by default for token-efficient responses without another hook runtime
 - `find-docs` and `find-skills` from `vercel-labs/skills`
 - Impeccable as the primary UI design workflow and project design-language keeper
 - Emil Kowalski's scoped motion vocabulary, opportunity, planning, review, and design-engineering skills

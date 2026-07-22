@@ -69,6 +69,7 @@ CODEX_JIRA_USERNAME="name@example.com" \
   "$manager" apply
 [[ -f "$CODEX_HOME/config.toml" ]] || fail "apply did not create config.toml"
 [[ -f "$CODEX_HOME/AGENTS.md" ]] || fail "apply did not create AGENTS.md"
+assert_contains "$CODEX_HOME/AGENTS.md" 'Use the installed `caveman` skill at full intensity by default'
 [[ ! -d "$CODEX_HOME/plugins/cache/openai-curated-remote/linear" ]] ||
   fail "apply did not purge the Linear marketplace cache"
 [[ ! -d "$CODEX_HOME/.tmp/plugins/plugins/obsidian" ]] ||
@@ -144,16 +145,16 @@ touch "$CODEX_HOME/skills/ui-ux-pro-max/SKILL.md" "$HOME/.agents/skills/impeccab
 assert_contains "$test_root/update.txt" 'install @openai/codex@latest only when outdated'
 assert_contains "$test_root/update.txt" 'latest tagged docker/mcp-gateway release'
 assert_contains "$test_root/update.txt" "refresh Docker's curated MCP catalogue"
+assert_contains "$test_root/update.txt" 'would remove all global Codex skills before installing the declared set'
+assert_contains "$test_root/update.txt" 'would remove undeclared Codex plugins'
+assert_contains "$test_root/update.txt" 'would remove undeclared Codex plugin marketplaces'
 assert_contains "$test_root/update.txt" 'would install every current skill from mattpocock/skills except obsidian-vault'
-assert_contains "$test_root/update.txt" 'npx skills update -g -y'
 assert_contains "$test_root/update.txt" 'npx skills add juliusbrussee/caveman -g -a codex -s caveman -y'
 assert_contains "$test_root/update.txt" 'npx skills add pbakaus/impeccable -g -a codex -s impeccable -y'
 assert_contains "$test_root/update.txt" 'npx skills add emilkowalski/skills -g -a codex -s animation-vocabulary emil-design-eng find-animation-opportunities improve-animations review-animations -y'
 assert_contains "$test_root/update.txt" 'npx skills add vercel-labs/agent-skills -g -a codex -s vercel-react-best-practices -y'
 assert_contains "$test_root/update.txt" 'npx skills add leonxlnx/taste-skill -g -a codex -s design-taste-frontend -y'
 assert_contains "$test_root/update.txt" 'would remove legacy Codex skill install: ui-ux-pro-max'
-assert_contains "$test_root/update.txt" 'npx skills remove obsidian-vault -g -a codex -y'
-assert_contains "$test_root/update.txt" 'npx skills remove ui-ux-pro-max -g -a codex -y'
 if grep -Fq -- 'npx skills add nextlevelbuilder/ui-ux-pro-max-skill' "$test_root/update.txt"; then
   fail "updater still installs ui-ux-pro-max"
 fi
@@ -169,6 +170,10 @@ assert_contains "$zsh_config" 'npm view "$package" version --silent'
 assert_contains "$zsh_config" 'npm install -g --loglevel=error "${package}@latest"'
 assert_contains "$zsh_config" 'last-successful-update'
 assert_contains "$zsh_config" 'command codex --yolo "$@"'
+assert_contains "$repo_root/install.sh" 'codex/managed/codex-sync" update'
+if rg -q 'Skipping unmanaged Codex' "$repo_root/install.sh"; then
+  fail "installer still preserves unmanaged Codex configuration"
+fi
 if rg -q 'codex update|dangerously-bypass-hook-trust' "$manager" "$zsh_config"; then
   fail "managed launcher still uses Codex self-update or blanket hook trust"
 fi
@@ -196,6 +201,72 @@ fi
 if rg -ni '(obsidian|linear|context7[.]api_key|CONTEXT7_API_KEY)' \
   "$repo_root/codex/managed" --glob '!README.md' --glob '!dependencies.conf' --glob '!codex-sync'; then
   fail "managed configuration contains a removed integration or Context7 secret"
+fi
+
+install_home="$test_root/install-home"
+mock_bin="$test_root/mock-bin"
+mock_log="$test_root/mock.log"
+real_codex="$(command -v codex)"
+mkdir -p "$install_home/.codex" "$install_home/.config/tmux/plugins/tpm" "$mock_bin"
+cat > "$install_home/.codex/config.toml" <<'EOF'
+[mcp_servers.unwanted]
+command = "old"
+EOF
+cat > "$mock_bin/codex" <<'EOF'
+#!/bin/sh
+if [ "${1:-}" = plugin ]; then
+  case "${2:-}" in
+    list) printf '%s\n' \
+      'stale@old  installed, enabled  1.0  stale' \
+      'ponytail@ponytail  installed, enabled  4.8.4  managed' ;;
+    marketplace)
+      if [ "${3:-}" = list ]; then
+        printf '%s\n' 'MARKETPLACE ROOT' 'old /tmp/old' 'openai-curated /tmp/openai'
+      else
+        printf '%s\n' "$*" >> "$MOCK_LOG"
+      fi
+      ;;
+    *) printf '%s\n' "$*" >> "$MOCK_LOG" ;;
+  esac
+  exit 0
+fi
+exec "$REAL_CODEX" "$@"
+EOF
+cat > "$mock_bin/npm" <<'EOF'
+#!/bin/sh
+if [ "${1:-}" = view ]; then
+  printf '%s\n' "$MOCK_CODEX_VERSION"
+else
+  printf '%s\n' "npm $*" >> "$MOCK_LOG"
+fi
+EOF
+cat > "$mock_bin/npx" <<'EOF'
+#!/bin/sh
+printf '%s\n' "npx $*" >> "$MOCK_LOG"
+EOF
+cat > "$mock_bin/docker" <<'EOF'
+#!/bin/sh
+[ "${1:-} ${2:-}" = 'mcp version' ]
+EOF
+cat > "$mock_bin/uname" <<'EOF'
+#!/bin/sh
+printf '%s\n' Darwin
+EOF
+chmod +x "$mock_bin"/*
+
+HOME="$install_home" CODEX_HOME="$install_home/.codex" \
+  PATH="$mock_bin:$PATH" CODEX_MANAGED_MACHINE=macos-personal-macmini \
+  REAL_CODEX="$real_codex" MOCK_LOG="$mock_log" \
+  MOCK_CODEX_VERSION="$(codex --version | awk '{print $NF}')" \
+  "$repo_root/install.sh" --headless > "$test_root/install.txt"
+if rg -q '^\[mcp_servers\.unwanted\]$' "$install_home/.codex/config.toml"; then
+  fail "installer preserved an unmanaged MCP server"
+fi
+assert_contains "$mock_log" "npx skills remove --skill * -g -a codex -y"
+assert_contains "$mock_log" 'plugin remove stale@old'
+assert_contains "$mock_log" 'plugin marketplace remove old'
+if grep -Fq 'plugin remove ponytail@ponytail' "$mock_log"; then
+  fail "dependency reset removed a declared plugin"
 fi
 
 echo "Codex managed configuration tests passed."

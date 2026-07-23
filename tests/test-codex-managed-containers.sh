@@ -122,7 +122,7 @@ while [ "$#" -gt 0 ]; do
   fi
   shift
 done
-printf '%s\n' '{"registry":{"context7":{},"notion":{},"playwright":{},"atlassian":{}}}' > "$output"
+printf '%s\n' '{"registry":{"playwright":{}}}' > "$output"
 EOF
 
   cat > "$mock_bin/python3" <<'EOF'
@@ -174,13 +174,10 @@ EOF
     test -f "$CODEX_HOME/config.toml"
     test -f "$CODEX_HOME/AGENTS.md"
     test "$(cat "$HOME/.config/codex/managed-machine")" = "$machine"
-    test -f "$HOME/.docker/mcp/catalogs/docker-official.json"
     test -f "$AGENTS_HOME/skills/impeccable/SKILL.md"
     grep -Fq 'npx skills add pbakaus/impeccable -g -a codex -s impeccable -y' "$MOCK_LOG"
-    if [[ "$machine" == macos-* ]]; then
-      grep -Fq '"--secrets", "docker-desktop"' "$CODEX_HOME/config.toml"
-    else
-      grep -Fq 'docker-mcp.env' "$CODEX_HOME/config.toml"
+    grep -Fq '"--profile", "default"' "$CODEX_HOME/config.toml"
+    if [[ "$machine" != macos-* ]]; then
       test -x "$HOME/.docker/cli-plugins/docker-mcp"
     fi
     printf 'passed full install/update: %s on %s container\n' "$machine" "$CODEX_CONTAINER_CASE"

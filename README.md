@@ -4,7 +4,7 @@
 
 The canonical shared, work, personal, and machine-specific Codex configuration lives in [`codex/managed`](codex/managed). Use `codex-sync` to apply, update, or validate Codex, shared skills, Ponytail hooks, MCP servers, and profile-specific integrations.
 
-`codex-sync update` reconciles the complete current Matt Pocock skill suite, excluding `obsidian-vault`, so newly added upstream skills arrive without maintaining a static allow-list. It also removes Obsidian and Linear caches after plugin updates.
+`codex-sync update` reconciles the complete current Matt Pocock skill suite, excluding `obsidian-vault`, so newly added upstream skills arrive without maintaining a static allow-list. Managed dependencies are updated in place; user-installed Codex apps, plugins, marketplaces, and Docker MCP servers are preserved.
 
 The shared skill baseline installs the maintained `juliusbrussee/caveman` skill and enables full intensity by default. Impeccable supplies the main UI workflow, supported by scoped Emil Kowalski motion skills, Vercel React best practices, and explicit-use design taste for landing pages or portfolios. Ponytail remains the single hook runtime.
 

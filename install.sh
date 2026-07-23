@@ -61,6 +61,7 @@ repo_dir=$(CDPATH='' cd "$(dirname "$0")" && pwd -P)
 backup_suffix=".bak.$(date +%Y%m%d%H%M%S)"
 tmux_plugin_dir="$HOME/.config/tmux/plugins"
 tpm_dir="$tmux_plugin_dir/tpm"
+codex_sync_state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/codex-sync"
 
 info() {
   printf '%s\n' "$*"
@@ -194,6 +195,8 @@ fi
 
 if command -v codex >/dev/null 2>&1; then
   CODEX_MANAGED_MACHINE="$codex_machine" "$repo_dir/codex/managed/codex-sync" update
+  mkdir -p "$codex_sync_state_dir"
+  touch "$codex_sync_state_dir/last-update-attempt"
 else
   info "Skipping Codex configuration; install npm or Codex first"
 fi

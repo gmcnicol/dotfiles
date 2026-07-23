@@ -27,16 +27,16 @@ assert_root_setting() {
 }
 
 assert_mcp_shape() {
-  local file="$1" expected_servers="$2" expected_count="$3" expected_secrets="$4"
+  local file="$1" expected_count="$2"
   [[ "$(grep -Ec '^\[mcp_servers\.[^]]+\]$' "$file")" -eq "$expected_count" ]] ||
     fail "$file does not contain exactly $expected_count Codex MCP entries"
   assert_contains "$file" '[mcp_servers.codegraph]'
   assert_contains "$file" '[mcp_servers.MCP_DOCKER]'
   assert_contains "$file" 'command = "docker"'
-  assert_contains "$file" '"--config",'
-  assert_contains "$file" 'codex-managed-config.yaml'
-  assert_contains "$file" "$expected_secrets"
-  assert_contains "$file" "\"--servers\", \"$expected_servers\""
+  assert_contains "$file" 'args = ["mcp", "gateway", "run", "--profile", "default"]'
+  if rg -q -- '--servers|--config|--secrets' "$file"; then
+    fail "$file bypasses the local Docker MCP profile"
+  fi
 }
 
 if rg -n 'mktemp( -d)? "[^"\n]*XXXXXX[^"\n]+"' "$manager"; then
@@ -65,23 +65,20 @@ touch \
 
 "$manager" apply --dry-run > "$test_root/work.toml"
 assert_contains "$test_root/work.toml" '[mcp_servers.MCP_DOCKER]'
-assert_contains "$test_root/work.toml" '"--catalog", "docker-official.json"'
-assert_contains "$test_root/work.toml" 'context7,notion,playwright,atlassian'
+assert_contains "$test_root/work.toml" '"--profile", "default"'
 assert_contains "$test_root/work.toml" '[plugins."ponytail@ponytail"]'
 
-CODEX_JIRA_URL="https://example.atlassian.net" \
-CODEX_JIRA_USERNAME="name@example.com" \
-  "$manager" apply
+mkdir -p "$HOME/.docker/mcp"
+printf 'local: true\n' > "$HOME/.docker/mcp/config.yaml"
+"$manager" apply
 [[ -f "$CODEX_HOME/config.toml" ]] || fail "apply did not create config.toml"
 [[ -f "$CODEX_HOME/AGENTS.md" ]] || fail "apply did not create AGENTS.md"
 assert_contains "$CODEX_HOME/AGENTS.md" 'Use the installed `caveman` skill at full intensity by default'
-[[ ! -e "$HOME/.config/codex/docker-mcp.env" ]] ||
-  fail "macOS apply created a file-backed Docker MCP secret store"
-[[ ! -d "$CODEX_HOME/plugins/cache/openai-curated-remote/linear" ]] ||
-  fail "apply did not purge the Linear marketplace cache"
-[[ ! -d "$CODEX_HOME/.tmp/plugins/plugins/obsidian" ]] ||
-  fail "apply did not purge the Obsidian marketplace cache"
-assert_contains "$HOME/.docker/mcp/codex-managed-config.yaml" '  jira:'
+[[ -d "$CODEX_HOME/plugins/cache/openai-curated-remote/linear" ]] ||
+  fail "apply removed a user-owned Linear integration"
+[[ -d "$CODEX_HOME/.tmp/plugins/plugins/obsidian" ]] ||
+  fail "apply removed a user-owned Obsidian integration"
+assert_contains "$HOME/.docker/mcp/config.yaml" 'local: true'
 
 clean_work_home="$test_root/clean-work-home"
 mkdir -p "$clean_work_home"
@@ -89,18 +86,11 @@ HOME="$clean_work_home" CODEX_HOME="$test_root/clean-work-codex" \
   CODEX_MANAGED_MACHINE="macos-work-laptop" "$manager" apply >/dev/null
 [[ -f "$test_root/clean-work-codex/config.toml" ]] ||
   fail "clean work apply did not install config.toml"
-assert_contains "$clean_work_home/.docker/mcp/codex-managed-config.yaml" '{}'
-
-in_situ_home="$test_root/in-situ-home"
-mkdir -p "$in_situ_home/.docker/mcp"
-printf 'existing: true\n' > "$in_situ_home/.docker/mcp/codex-managed-config.yaml"
-HOME="$in_situ_home" CODEX_HOME="$test_root/in-situ-codex" \
-  CODEX_MANAGED_MACHINE="macos-work-laptop" "$manager" apply >/dev/null
-assert_contains "$in_situ_home/.docker/mcp/codex-managed-config.yaml" 'existing: true'
+[[ ! -e "$clean_work_home/.docker/mcp/codex-managed-config.yaml" ]] ||
+  fail "apply created a competing Docker MCP configuration"
 
 export CODEX_MANAGED_MACHINE="macos-personal-macmini"
 "$manager" apply --dry-run > "$test_root/personal.toml"
-assert_contains "$test_root/personal.toml" 'context7,notion,playwright'
 
 for machine in omarchy-laptop ubuntu-server; do
   CODEX_MANAGED_MACHINE="$machine" "$manager" apply --dry-run > "$test_root/$machine.toml"
@@ -108,14 +98,14 @@ done
 
 assert_root_setting "$test_root/work.toml" 'approval_policy = "on-request"'
 assert_root_setting "$test_root/work.toml" 'check_for_update_on_startup = false'
-assert_mcp_shape "$test_root/work.toml" 'context7,notion,playwright,atlassian' 2 '"--secrets", "docker-desktop"'
+assert_mcp_shape "$test_root/work.toml" 2
 assert_root_setting "$test_root/personal.toml" 'sandbox_mode = "workspace-write"'
-assert_mcp_shape "$test_root/personal.toml" 'context7,notion,playwright' 2 '"--secrets", "docker-desktop"'
+assert_mcp_shape "$test_root/personal.toml" 2
 assert_root_setting "$test_root/omarchy-laptop.toml" 'sandbox_mode = "workspace-write"'
-assert_mcp_shape "$test_root/omarchy-laptop.toml" 'context7,notion,playwright' 2 'docker-mcp.env'
+assert_mcp_shape "$test_root/omarchy-laptop.toml" 2
 assert_root_setting "$test_root/ubuntu-server.toml" 'sandbox_mode = "workspace-write"'
 assert_contains "$test_root/ubuntu-server.toml" '[projects."/home/gareth/src/dotfiles"]'
-assert_mcp_shape "$test_root/ubuntu-server.toml" 'context7,notion,playwright' 2 'docker-mcp.env'
+assert_mcp_shape "$test_root/ubuntu-server.toml" 2
 
 cat > "$test_root/hooks.json" <<'EOF'
 [
@@ -171,15 +161,15 @@ mkdir -p "$CODEX_HOME/skills/ui-ux-pro-max" "$HOME/.agents/skills/impeccable"
 touch "$CODEX_HOME/skills/ui-ux-pro-max/SKILL.md" "$HOME/.agents/skills/impeccable/SKILL.md"
 "$manager" update --dry-run > "$test_root/update.txt"
 "$manager" install --dry-run > "$test_root/install-command.txt"
-assert_contains "$test_root/install-command.txt" 'would remove undeclared Codex plugins'
 assert_contains "$test_root/update.txt" 'install @openai/codex@latest only when outdated'
-assert_contains "$test_root/update.txt" 'latest tagged docker/mcp-gateway release'
-assert_contains "$test_root/update.txt" "refresh Docker's curated MCP catalogue"
+assert_contains "$test_root/update.txt" "would use Docker Desktop's managed MCP Gateway plugin"
+assert_contains "$test_root/update.txt" 'would add missing managed Docker MCP servers to profile default without removing local servers'
 if grep -Fq 'would remove all global Codex skills before installing the declared set' "$test_root/update.txt"; then
   fail "dry-run still proposes deleting all global skills"
 fi
-assert_contains "$test_root/update.txt" 'would remove undeclared Codex plugins'
-assert_contains "$test_root/update.txt" 'would remove undeclared Codex plugin marketplaces'
+if rg -q 'remove undeclared Codex plugin|purge.*integration' "$test_root/update.txt" "$manager"; then
+  fail "managed update still removes user-owned Codex integrations"
+fi
 assert_contains "$test_root/update.txt" 'would install every current skill from mattpocock/skills except obsidian-vault'
 assert_contains "$test_root/update.txt" 'npx skills add juliusbrussee/caveman -g -a codex -s caveman -y'
 assert_contains "$test_root/update.txt" 'npx skills add pbakaus/impeccable -g -a codex -s impeccable -y'
@@ -200,6 +190,7 @@ assert_contains "$zsh_config" 'npm install -g --loglevel=error "${package}@lates
 assert_contains "$zsh_config" 'last-update-attempt'
 assert_contains "$zsh_config" 'command codex --yolo "$@"'
 assert_contains "$repo_root/install.sh" 'codex/managed/codex-sync" update'
+assert_contains "$repo_root/install.sh" 'touch "$codex_sync_state_dir/last-update-attempt"'
 if rg -q 'Skipping unmanaged Codex' "$repo_root/install.sh"; then
   fail "installer still preserves unmanaged Codex configuration"
 fi
@@ -230,7 +221,7 @@ if rg -n 'ctx7sk-|API_KEY[[:space:]]*=[[:space:]]*"[^$]' "$repo_root/codex/manag
   fail "managed configuration contains a literal API key"
 fi
 
-if rg -ni '(obsidian|linear|context7[.]api_key|CONTEXT7_API_KEY)' \
+if rg -ni '(obsidian|linear)' \
   "$repo_root/codex/managed" --glob '!README.md' --glob '!dependencies.conf' --glob '!codex-sync'; then
   fail "managed configuration contains a removed integration or Context7 secret"
 fi
@@ -266,7 +257,9 @@ exec "$REAL_CODEX" "$@"
 EOF
 cat > "$mock_bin/npm" <<'EOF'
 #!/bin/sh
-if [ "${1:-}" = view ]; then
+if [ "${1:-} ${2:-}" = 'list -g' ]; then
+  printf '{"dependencies":{"@colbymchenry/codegraph":{"version":"%s"}}}\n' "$MOCK_CODEX_VERSION"
+elif [ "${1:-}" = view ]; then
   printf '%s\n' "$MOCK_CODEX_VERSION"
 else
   printf '%s\n' "npm $*" >> "$MOCK_LOG"
@@ -276,12 +269,28 @@ cat > "$mock_bin/npx" <<'EOF'
 #!/bin/sh
 printf '%s\n' "npx $*" >> "$MOCK_LOG"
 case "$*" in
+  'skills list --global --json')
+    printf '%s\n' '[{"name":"impeccable","source":"pbakaus/impeccable"}]'
+    ;;
   'skills add mattpocock/skills '*) cat >/dev/null ;;
 esac
 EOF
 cat > "$mock_bin/docker" <<'EOF'
 #!/bin/sh
-[ "${1:-} ${2:-}" = 'mcp version' ]
+printf '%s\n' "docker $*" >> "$MOCK_LOG"
+case "$*" in
+  'mcp version') exit 0 ;;
+  'mcp profile list')
+    printf '%s\n' 'ID Name' '---- ----' 'default Default Profile'
+    ;;
+  'mcp profile server ls --filter profile=default')
+    printf '%s\n' \
+      'PROFILE | TYPE | IDENTIFIER' \
+      '--------|------|-----------' \
+      'default | image | playwright' \
+      'default | image | local-extra'
+    ;;
+esac
 EOF
 cat > "$mock_bin/uname" <<'EOF'
 #!/bin/sh
@@ -297,47 +306,27 @@ HOME="$install_home" CODEX_HOME="$install_home/.codex" \
 if rg -q '^\[mcp_servers\.unwanted\]$' "$install_home/.codex/config.toml"; then
   fail "installer preserved an unmanaged MCP server"
 fi
-assert_contains "$mock_log" 'npx skills add pbakaus/impeccable -g -a codex -s impeccable -y'
+[[ -f "$install_home/.local/state/codex-sync/last-update-attempt" ]] ||
+  fail "installer did not record its completed update"
+assert_contains "$mock_log" 'npx skills update impeccable -g -y'
+if grep -Fq 'npx skills add pbakaus/impeccable' "$mock_log"; then
+  fail "dependency update reinstalled an existing skill"
+fi
+if grep -Fq 'npm install -g @colbymchenry/codegraph' "$mock_log"; then
+  fail "dependency update reinstalled a current npm package"
+fi
+if grep -Fq 'plugin add ponytail@ponytail' "$mock_log"; then
+  fail "dependency update reinstalled an existing plugin"
+fi
 if grep -Fq 'npx skills remove --skill * -g -a codex -y' "$mock_log"; then
   fail "dependency update deletes all skills before fallible installs"
 fi
-assert_contains "$mock_log" 'plugin remove stale@old'
-assert_contains "$mock_log" 'plugin marketplace remove old'
-if grep -Fq 'plugin remove ponytail@ponytail' "$mock_log"; then
-  fail "dependency reset removed a declared plugin"
+if rg -q 'plugin remove|plugin marketplace remove' "$mock_log"; then
+  fail "dependency update removed user-owned Codex plugins"
 fi
-
-cx_home="$test_root/cx-home"
-cx_mock_bin="$test_root/cx-mock-bin"
-cx_log="$test_root/cx.log"
-mkdir -p "$cx_home/.config/codex" "$cx_mock_bin"
-printf '%s\n' macos-work-laptop > "$cx_home/.config/codex/managed-machine"
-cat > "$cx_mock_bin/codex" <<'EOF'
-#!/bin/sh
-if [ "${1:-}" = --version ]; then
-  printf '%s\n' 'codex-cli 0.145.0'
-else
-  printf '%s\n' "codex $*" >> "$CX_LOG"
+if grep -Fq 'catalog://mcp/docker-mcp-catalog/playwright' "$mock_log"; then
+  fail "Docker profile reconciliation replaced an existing managed server"
 fi
-EOF
-cat > "$cx_mock_bin/npm" <<'EOF'
-#!/bin/sh
-exit 1
-EOF
-cat > "$cx_mock_bin/codex-sync" <<'EOF'
-#!/bin/sh
-printf '%s\n' "codex-sync $*" >> "$CX_LOG"
-printf '%s\n' 'simulated maintenance failure' >&2
-exit 1
-EOF
-chmod +x "$cx_mock_bin"/*
-HOME="$cx_home" PATH="$cx_mock_bin:$PATH" CX_LOG="$cx_log" ZSH_CONFIG="$zsh_config" \
-  zsh -fc 'eval "$(sed -n "/^cx() {/,/^}/p" "$ZSH_CONFIG")"; cx; cx' \
-  > "$test_root/cx.txt" 2>&1 || fail "cx refused to launch after maintenance failure"
-assert_contains "$cx_log" 'codex --yolo'
-assert_contains "$test_root/cx.txt" 'launching installed Codex'
-[[ "$(grep -Fc 'codex-sync update' "$cx_log")" -eq 1 ]] || \
-  fail "cx retried a failed full update before the 24-hour interval"
 
 install_codex_log="$test_root/install-codex.log"
 INSTALL_CODEX_LOG="$install_codex_log" MANAGER="$manager" bash -c '

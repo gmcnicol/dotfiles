@@ -378,12 +378,12 @@ cx() {
     fi
 
     if (( sync_due )); then
-      print "cx: synchronising Codex configuration and dependencies"
+      print "cx: checking Codex configuration and dependencies"
       if ! CODEX_MANAGED_MACHINE="$managed_machine" codex-sync update; then
-        print -u2 "cx: sync failed; launching installed Codex"
+        print -u2 "cx: update check failed; launching installed Codex"
       fi
       mkdir -p "$sync_state_dir" && touch "$sync_stamp" || \
-        print -u2 "cx: could not record sync attempt"
+        print -u2 "cx: could not record update check"
     elif ! CODEX_MANAGED_MACHINE="$managed_machine" codex-sync apply; then
       print -u2 "cx: config apply failed; launching installed Codex"
     fi

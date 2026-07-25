@@ -31,6 +31,8 @@ assert_mcp_shape() {
   [[ "$(grep -Ec '^\[mcp_servers\.[^]]+\]$' "$file")" -eq "$expected_count" ]] ||
     fail "$file does not contain exactly $expected_count Codex MCP entries"
   assert_contains "$file" '[mcp_servers.codegraph]'
+  assert_contains "$file" '[mcp_servers.context7]'
+  assert_contains "$file" 'args = ["-y", "@upstash/context7-mcp@latest"]'
   assert_contains "$file" '[mcp_servers.MCP_DOCKER]'
   assert_contains "$file" 'command = "docker"'
   assert_contains "$file" 'args = ["mcp", "gateway", "run", "--profile", "default"]'
@@ -98,14 +100,14 @@ done
 
 assert_root_setting "$test_root/work.toml" 'approval_policy = "on-request"'
 assert_root_setting "$test_root/work.toml" 'check_for_update_on_startup = false'
-assert_mcp_shape "$test_root/work.toml" 2
+assert_mcp_shape "$test_root/work.toml" 3
 assert_root_setting "$test_root/personal.toml" 'sandbox_mode = "workspace-write"'
-assert_mcp_shape "$test_root/personal.toml" 2
+assert_mcp_shape "$test_root/personal.toml" 3
 assert_root_setting "$test_root/omarchy-laptop.toml" 'sandbox_mode = "workspace-write"'
-assert_mcp_shape "$test_root/omarchy-laptop.toml" 2
+assert_mcp_shape "$test_root/omarchy-laptop.toml" 3
 assert_root_setting "$test_root/ubuntu-server.toml" 'sandbox_mode = "workspace-write"'
 assert_contains "$test_root/ubuntu-server.toml" '[projects."/home/gareth/src/dotfiles"]'
-assert_mcp_shape "$test_root/ubuntu-server.toml" 2
+assert_mcp_shape "$test_root/ubuntu-server.toml" 3
 
 cat > "$test_root/hooks.json" <<'EOF'
 [
@@ -234,7 +236,19 @@ install_home="$test_root/install-home"
 mock_bin="$test_root/mock-bin"
 mock_log="$test_root/mock.log"
 real_codex="$(command -v codex)"
-mkdir -p "$install_home/.codex" "$install_home/.config/tmux/plugins/tpm" "$mock_bin"
+mkdir -p \
+  "$install_home/.agents/skills/removed-upstream" \
+  "$install_home/.codex" \
+  "$install_home/.config/tmux/plugins/tpm" \
+  "$mock_bin"
+cat > "$install_home/.agents/.skill-lock.json" <<'EOF'
+{
+  "version": 3,
+  "skills": {
+    "removed-upstream": {"source": "mattpocock/skills"}
+  }
+}
+EOF
 cat > "$install_home/.codex/config.toml" <<'EOF'
 [mcp_servers.unwanted]
 command = "old"
@@ -318,6 +332,10 @@ fi
 [[ -f "$install_home/.local/state/codex-sync/last-update-attempt" ]] ||
   fail "installer did not record its completed update"
 assert_contains "$mock_log" 'npx --yes skills@latest update impeccable -g -y'
+assert_contains "$mock_log" 'npx --yes skills@latest remove removed-upstream -g -y'
+if grep -Fq 'skills@latest remove removed-upstream -g -a codex' "$mock_log"; then
+  fail "upstream-deleted Matt skill was removed from Codex only"
+fi
 if grep -Fq 'npx --yes skills@latest add pbakaus/impeccable' "$mock_log"; then
   fail "dependency update reinstalled an existing skill"
 fi

@@ -13,6 +13,10 @@ multi_agent = true
 command = "codegraph"
 args = ["serve", "--mcp"]
 
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+
 [marketplaces.ponytail]
 source_type = "git"
 source = "https://github.com/DietrichGebert/ponytail.git"

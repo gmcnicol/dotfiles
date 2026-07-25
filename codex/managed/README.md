@@ -35,6 +35,7 @@ The dotfiles installer runs this full update. Existing Codex configuration is ba
 ## Shared SDLC baseline
 
 - Docker MCP Gateway with Playwright on every machine
+- Direct local Context7 MCP on every machine
 - A shared direct Codegraph MCP server on every machine
 - Ponytail instructions and lifecycle hooks
 - GitHub plugin

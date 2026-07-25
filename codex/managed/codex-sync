@@ -359,7 +359,7 @@ install_skill_repo_except() {
     fi
     while IFS= read -r stale_skill; do
       [[ -n "$stale_skill" ]] || continue
-      npx --yes skills@latest remove "$stale_skill" -g -a codex -y
+      npx --yes skills@latest remove "$stale_skill" -g -y
     done < "$checkout/stale-skills.txt"
   fi
   find "$checkout" -depth -delete

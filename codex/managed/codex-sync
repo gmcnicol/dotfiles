@@ -232,11 +232,17 @@ apply_config() {
 update_dependencies() {
   local installed_skills="" skill_json
   if (( ! dry_run )); then
-    skill_json="$(npx skills list --global --json 2>/dev/null || true)"
-    installed_skills="$(
-      printf '%s\n' "${skill_json:-[]}" |
-        python3 -c 'import json,sys; print("\n".join("{}|{}".format(x.get("source", ""), x["name"]) for x in json.load(sys.stdin)))'
-    )"
+    if ! skill_json="$(npx --yes skills@latest list --global --json)"; then
+      echo "Unable to read global skill inventory." >&2
+      return 1
+    fi
+    if ! installed_skills="$(
+      printf '%s\n' "$skill_json" |
+        python3 -c 'import json,sys; print("\n".join("{}|{}".format(x.get("source", ""), x["name"]) for x in json.load(sys.stdin)))' 2>/dev/null
+    )"; then
+      echo "Unable to read global skill inventory." >&2
+      return 1
+    fi
   fi
 
   while IFS='|' read -r kind source selection <&3 || [[ -n "$kind$source$selection" ]]; do
@@ -276,8 +282,8 @@ update_or_install_skills() {
       missing+=("$skill")
     fi
   done
-  (( ${#current[@]} == 0 )) || run_or_print npx skills update "${current[@]}" -g -y
-  (( ${#missing[@]} == 0 )) || run_or_print npx skills add "$source" -g -a codex -s "${missing[@]}" -y
+  (( ${#current[@]} == 0 )) || run_or_print npx --yes skills@latest update "${current[@]}" -g -y
+  (( ${#missing[@]} == 0 )) || run_or_print npx --yes skills@latest add "$source" -g -a codex -s "${missing[@]}" -y
 }
 
 update_npm_global() {
@@ -353,7 +359,7 @@ install_skill_repo_except() {
     fi
     while IFS= read -r stale_skill; do
       [[ -n "$stale_skill" ]] || continue
-      npx skills remove "$stale_skill" -g -a codex -y
+      npx --yes skills@latest remove "$stale_skill" -g -a codex -y
     done < "$checkout/stale-skills.txt"
   fi
   find "$checkout" -depth -delete
@@ -490,7 +496,7 @@ doctor() {
 
   echo "using: Docker MCP profile default"
 
-  if ! npx skills list --global --json >/dev/null 2>&1; then
+  if ! npx --yes skills@latest list --global --json >/dev/null 2>&1; then
     echo "failed: global skill inventory"
     failures=1
   else

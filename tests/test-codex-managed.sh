@@ -162,7 +162,11 @@ touch "$CODEX_HOME/skills/ui-ux-pro-max/SKILL.md" "$HOME/.agents/skills/impeccab
 "$manager" update --dry-run > "$test_root/update.txt"
 "$manager" install --dry-run > "$test_root/install-command.txt"
 assert_contains "$test_root/update.txt" 'install @openai/codex@latest only when outdated'
-assert_contains "$test_root/update.txt" "would use Docker Desktop's managed MCP Gateway plugin"
+if [[ "$(uname -s)" == Darwin ]]; then
+  assert_contains "$test_root/update.txt" "would use Docker Desktop's managed MCP Gateway plugin"
+else
+  assert_contains "$test_root/update.txt" 'compare Docker MCP Gateway with the latest tagged release'
+fi
 assert_contains "$test_root/update.txt" 'would add missing managed Docker MCP servers to profile default without removing local servers'
 if grep -Fq 'would remove all global Codex skills before installing the declared set' "$test_root/update.txt"; then
   fail "dry-run still proposes deleting all global skills"
@@ -171,13 +175,13 @@ if rg -q 'remove undeclared Codex plugin|purge.*integration' "$test_root/update.
   fail "managed update still removes user-owned Codex integrations"
 fi
 assert_contains "$test_root/update.txt" 'would install every current skill from mattpocock/skills except obsidian-vault'
-assert_contains "$test_root/update.txt" 'npx skills add juliusbrussee/caveman -g -a codex -s caveman -y'
-assert_contains "$test_root/update.txt" 'npx skills add pbakaus/impeccable -g -a codex -s impeccable -y'
-assert_contains "$test_root/update.txt" 'npx skills add emilkowalski/skills -g -a codex -s animation-vocabulary emil-design-eng find-animation-opportunities improve-animations review-animations -y'
-assert_contains "$test_root/update.txt" 'npx skills add vercel-labs/agent-skills -g -a codex -s vercel-react-best-practices -y'
-assert_contains "$test_root/update.txt" 'npx skills add leonxlnx/taste-skill -g -a codex -s design-taste-frontend -y'
+assert_contains "$test_root/update.txt" 'npx --yes skills@latest add juliusbrussee/caveman -g -a codex -s caveman -y'
+assert_contains "$test_root/update.txt" 'npx --yes skills@latest add pbakaus/impeccable -g -a codex -s impeccable -y'
+assert_contains "$test_root/update.txt" 'npx --yes skills@latest add emilkowalski/skills -g -a codex -s animation-vocabulary emil-design-eng find-animation-opportunities improve-animations review-animations -y'
+assert_contains "$test_root/update.txt" 'npx --yes skills@latest add vercel-labs/agent-skills -g -a codex -s vercel-react-best-practices -y'
+assert_contains "$test_root/update.txt" 'npx --yes skills@latest add leonxlnx/taste-skill -g -a codex -s design-taste-frontend -y'
 assert_contains "$test_root/update.txt" 'would remove legacy Codex skill install: ui-ux-pro-max'
-if grep -Fq -- 'npx skills add nextlevelbuilder/ui-ux-pro-max-skill' "$test_root/update.txt"; then
+if grep -Fq -- 'skills@latest add nextlevelbuilder/ui-ux-pro-max-skill' "$test_root/update.txt"; then
   fail "updater still installs ui-ux-pro-max"
 fi
 assert_contains "$test_root/update.txt" 'npm install -g @colbymchenry/codegraph'
@@ -269,10 +273,15 @@ cat > "$mock_bin/npx" <<'EOF'
 #!/bin/sh
 printf '%s\n' "npx $*" >> "$MOCK_LOG"
 case "$*" in
-  'skills list --global --json')
-    printf '%s\n' '[{"name":"impeccable","source":"pbakaus/impeccable"}]'
+  '--yes skills@latest list --global --json')
+    case "${MOCK_SKILL_INVENTORY:-valid}" in
+      valid) printf '%s\n' '[{"name":"impeccable","source":"pbakaus/impeccable"}]' ;;
+      failed) exit 1 ;;
+      empty) : ;;
+      whitespace) printf ' \n' ;;
+    esac
     ;;
-  'skills add mattpocock/skills '*) cat >/dev/null ;;
+  '--yes skills@latest add mattpocock/skills '*) cat >/dev/null ;;
 esac
 EOF
 cat > "$mock_bin/docker" <<'EOF'
@@ -308,8 +317,8 @@ if rg -q '^\[mcp_servers\.unwanted\]$' "$install_home/.codex/config.toml"; then
 fi
 [[ -f "$install_home/.local/state/codex-sync/last-update-attempt" ]] ||
   fail "installer did not record its completed update"
-assert_contains "$mock_log" 'npx skills update impeccable -g -y'
-if grep -Fq 'npx skills add pbakaus/impeccable' "$mock_log"; then
+assert_contains "$mock_log" 'npx --yes skills@latest update impeccable -g -y'
+if grep -Fq 'npx --yes skills@latest add pbakaus/impeccable' "$mock_log"; then
   fail "dependency update reinstalled an existing skill"
 fi
 if grep -Fq 'npm install -g @colbymchenry/codegraph' "$mock_log"; then
@@ -318,7 +327,7 @@ fi
 if grep -Fq 'plugin add ponytail@ponytail' "$mock_log"; then
   fail "dependency update reinstalled an existing plugin"
 fi
-if grep -Fq 'npx skills remove --skill * -g -a codex -y' "$mock_log"; then
+if grep -Fq 'skills@latest remove --skill * -g -a codex -y' "$mock_log"; then
   fail "dependency update deletes all skills before fallible installs"
 fi
 if rg -q 'plugin remove|plugin marketplace remove' "$mock_log"; then
@@ -327,6 +336,23 @@ fi
 if grep -Fq 'catalog://mcp/docker-mcp-catalog/playwright' "$mock_log"; then
   fail "Docker profile reconciliation replaced an existing managed server"
 fi
+
+for invalid_inventory in failed empty whitespace; do
+  : > "$mock_log"
+  if HOME="$install_home" CODEX_HOME="$install_home/.codex" \
+    PATH="$mock_bin:$PATH" CODEX_MANAGED_MACHINE=macos-personal-macmini \
+    REAL_CODEX="$real_codex" MOCK_LOG="$mock_log" \
+    MOCK_CODEX_VERSION="$(codex --version | awk '{print $NF}')" \
+    MOCK_SKILL_INVENTORY="$invalid_inventory" \
+    "$manager" update > "$test_root/invalid-inventory-$invalid_inventory.txt" 2>&1; then
+    fail "managed update accepted $invalid_inventory skill inventory"
+  fi
+  assert_contains "$test_root/invalid-inventory-$invalid_inventory.txt" \
+    'Unable to read global skill inventory.'
+  if rg -q 'skills@latest (add|update)' "$mock_log"; then
+    fail "managed update changed skills after $invalid_inventory inventory"
+  fi
+done
 
 install_codex_log="$test_root/install-codex.log"
 INSTALL_CODEX_LOG="$install_codex_log" MANAGER="$manager" bash -c '

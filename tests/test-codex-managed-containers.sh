@@ -55,7 +55,9 @@ EOF
   cat > "$mock_bin/npx" <<'EOF'
 #!/bin/sh
 printf 'npx %s\n' "$*" >> "$MOCK_LOG"
-if [ "${1:-} ${2:-}" = "skills add" ]; then
+if [ "${1:-} ${2:-} ${3:-}" = "--yes skills@latest list" ]; then
+  printf '%s\n' '[]'
+elif [ "${1:-} ${2:-} ${3:-}" = "--yes skills@latest add" ]; then
   selecting=false
   for argument do
     case "$argument" in
@@ -175,7 +177,7 @@ EOF
     test -f "$CODEX_HOME/AGENTS.md"
     test "$(cat "$HOME/.config/codex/managed-machine")" = "$machine"
     test -f "$AGENTS_HOME/skills/impeccable/SKILL.md"
-    grep -Fq 'npx skills add pbakaus/impeccable -g -a codex -s impeccable -y' "$MOCK_LOG"
+    grep -Fq 'npx --yes skills@latest add pbakaus/impeccable -g -a codex -s impeccable -y' "$MOCK_LOG"
     grep -Fq '"--profile", "default"' "$CODEX_HOME/config.toml"
     if [[ "$machine" != macos-* ]]; then
       test -x "$HOME/.docker/cli-plugins/docker-mcp"

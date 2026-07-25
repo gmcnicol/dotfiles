@@ -194,7 +194,7 @@ assert_contains "$zsh_config" 'CODEX_MANAGED_MACHINE="$managed_machine" codex-sy
 assert_contains "$manager" 'npm view @openai/codex version --silent'
 assert_contains "$zsh_config" 'npm install -g --loglevel=error "${package}@latest"'
 assert_contains "$zsh_config" 'last-update-attempt'
-assert_contains "$zsh_config" 'command codex --yolo "$@"'
+assert_contains "$zsh_config" 'command codex --yolo -C "$PWD" "$@"'
 assert_contains "$repo_root/install.sh" 'codex/managed/codex-sync" update'
 assert_contains "$repo_root/install.sh" 'touch "$codex_sync_state_dir/last-update-attempt"'
 if rg -q 'Skipping unmanaged Codex' "$repo_root/install.sh"; then
@@ -236,16 +236,28 @@ install_home="$test_root/install-home"
 mock_bin="$test_root/mock-bin"
 mock_log="$test_root/mock.log"
 real_codex="$(command -v codex)"
+deleted_source="$test_root/deleted-source"
+mkdir -p "$deleted_source"
+git -C "$deleted_source" init --quiet
+printf '%s\n' 'upstream remains available' > "$deleted_source/README.md"
+git -C "$deleted_source" add README.md
+git -C "$deleted_source" \
+  -c user.name=Test -c user.email=test@example.com commit --quiet -m fixture
 mkdir -p \
   "$install_home/.agents/skills/removed-upstream" \
   "$install_home/.codex" \
   "$install_home/.config/tmux/plugins/tpm" \
   "$mock_bin"
-cat > "$install_home/.agents/.skill-lock.json" <<'EOF'
+cat > "$install_home/.agents/.skill-lock.json" <<EOF
 {
   "version": 3,
   "skills": {
-    "removed-upstream": {"source": "mattpocock/skills"}
+    "removed-upstream": {
+      "source": "someone/else",
+      "sourceType": "github",
+      "sourceUrl": "file://$deleted_source",
+      "skillPath": "skills/removed-upstream/SKILL.md"
+    }
   }
 }
 EOF

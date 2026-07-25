@@ -389,7 +389,7 @@ cx() {
     fi
   fi
 
-  command codex --yolo "$@"
+  command codex --yolo -C "$PWD" "$@"
 }
 
 refresh_codeartifact_token() {

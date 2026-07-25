@@ -245,6 +245,8 @@ update_dependencies() {
     fi
   fi
 
+  reconcile_deleted_skills
+
   while IFS='|' read -r kind source selection <&3 || [[ -n "$kind$source$selection" ]]; do
     [[ -n "$kind" && "${kind#\#}" == "$kind" ]] || continue
     case "$kind" in
@@ -269,6 +271,32 @@ update_dependencies() {
       *) echo "Unknown dependency kind: $kind" >&2; return 1 ;;
     esac
   done 3< "$managed_root/dependencies.conf"
+}
+
+reconcile_deleted_skills() {
+  if (( dry_run )); then
+    echo "would remove globally installed GitHub skills deleted upstream"
+    return
+  fi
+
+  local skill_lock stale_skills stale_skill
+  if [[ -n "${XDG_STATE_HOME:-}" ]]; then
+    skill_lock="$XDG_STATE_HOME/skills/.skill-lock.json"
+  else
+    skill_lock="${AGENTS_HOME:-$HOME/.agents}/.skill-lock.json"
+  fi
+  [[ -f "$skill_lock" ]] || return 0
+
+  stale_skills="$(mktemp "${TMPDIR:-/tmp}/codex-deleted-skills-XXXXXX")"
+  if ! python3 "$managed_root/find-deleted-skills.py" "$skill_lock" > "$stale_skills"; then
+    rm -f -- "$stale_skills"
+    return 1
+  fi
+  while IFS= read -r stale_skill; do
+    [[ -n "$stale_skill" ]] || continue
+    npx --yes skills@latest remove "$stale_skill" -g -y
+  done < "$stale_skills"
+  rm -f -- "$stale_skills"
 }
 
 update_or_install_skills() {

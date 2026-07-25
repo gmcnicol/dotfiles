@@ -237,12 +237,20 @@ mock_bin="$test_root/mock-bin"
 mock_log="$test_root/mock.log"
 real_codex="$(command -v codex)"
 deleted_source="$test_root/deleted-source"
-mkdir -p "$deleted_source"
+mkdir -p \
+  "$deleted_source/skills/removed-upstream" \
+  "$deleted_source/skills/orphan-upstream"
 git -C "$deleted_source" init --quiet
-printf '%s\n' 'upstream remains available' > "$deleted_source/README.md"
-git -C "$deleted_source" add README.md
+printf '%s\n' 'locked then deleted' > "$deleted_source/skills/removed-upstream/SKILL.md"
+printf '%s\n' 'lock lost then deleted' > "$deleted_source/skills/orphan-upstream/SKILL.md"
+git -C "$deleted_source" add skills
 git -C "$deleted_source" \
-  -c user.name=Test -c user.email=test@example.com commit --quiet -m fixture
+  -c user.name=Test -c user.email=test@example.com commit --quiet -m skills
+rm -r "$deleted_source/skills"
+printf '%s\n' 'upstream remains available' > "$deleted_source/README.md"
+git -C "$deleted_source" add --all
+git -C "$deleted_source" \
+  -c user.name=Test -c user.email=test@example.com commit --quiet -m removal
 mkdir -p \
   "$install_home/.agents/skills/removed-upstream" \
   "$install_home/.codex" \
@@ -261,6 +269,18 @@ cat > "$install_home/.agents/.skill-lock.json" <<EOF
   }
 }
 EOF
+cat > "$test_root/installed-skills.json" <<'EOF'
+[
+  {"name": "removed-upstream", "source": "someone/else"},
+  {"name": "orphan-upstream", "source": ""}
+]
+EOF
+python3 "$repo_root/codex/managed/find-deleted-skills.py" \
+  "$install_home/.agents/.skill-lock.json" \
+  "$test_root/installed-skills.json" \
+  "file://$deleted_source" > "$test_root/deleted-skills.txt"
+assert_contains "$test_root/deleted-skills.txt" 'removed-upstream'
+assert_contains "$test_root/deleted-skills.txt" 'orphan-upstream'
 cat > "$install_home/.codex/config.toml" <<'EOF'
 [mcp_servers.unwanted]
 command = "old"

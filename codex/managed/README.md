@@ -51,7 +51,7 @@ Skill, plugin, and Codegraph package sources are declared in `dependencies.conf`
 
 Skills previously installed directly under `$CODEX_HOME/skills` are mapped to their managed replacements in `legacy-skills.conf`. After `codex-sync update` verifies the replacement exists under `~/.agents/skills`, it removes the legacy copy so Codex sees exactly one installation.
 
-The updater checks every globally locked GitHub skill against its recorded upstream path and removes deleted skills across all agents. Matt Pocock's suite additionally installs every current upstream skill except `obsidian-vault`; the legacy removal entry cleans that exclusion from machines that predate source metadata. Unrelated integrations remain untouched.
+The updater checks every globally locked GitHub skill against its recorded upstream path and removes deleted skills across all agents. It also matches lockless installed skills against the history of every managed source, removing leftovers deleted upstream. Matt Pocock's suite additionally installs every current upstream skill except `obsidian-vault`; the legacy removal entry cleans that exclusion from machines that predate source metadata. Unrelated integrations remain untouched.
 
 `ui-ux-pro-max` is removed only after Impeccable is installed and verified. Impeccable owns broad product and brand design work. The Emil skills activate for motion-specific tasks, Vercel's skill owns React performance guidance, and `design-taste-frontend` should be invoked explicitly for landing pages or portfolios rather than as a second general design system.
 

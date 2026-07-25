@@ -230,7 +230,7 @@ apply_config() {
 }
 
 update_dependencies() {
-  local installed_skills="" skill_json
+  local installed_skills="" skill_json=""
   if (( ! dry_run )); then
     if ! skill_json="$(npx --yes skills@latest list --global --json)"; then
       echo "Unable to read global skill inventory." >&2
@@ -245,7 +245,7 @@ update_dependencies() {
     fi
   fi
 
-  reconcile_deleted_skills
+  reconcile_deleted_skills "$skill_json"
 
   while IFS='|' read -r kind source selection <&3 || [[ -n "$kind$source$selection" ]]; do
     [[ -n "$kind" && "${kind#\#}" == "$kind" ]] || continue
@@ -279,24 +279,32 @@ reconcile_deleted_skills() {
     return
   fi
 
-  local skill_lock stale_skills stale_skill
+  local skill_json="$1" skill_lock stale_skills skill_inventory stale_skill
+  local kind source selection
+  local -a managed_sources=()
   if [[ -n "${XDG_STATE_HOME:-}" ]]; then
     skill_lock="$XDG_STATE_HOME/skills/.skill-lock.json"
   else
     skill_lock="${AGENTS_HOME:-$HOME/.agents}/.skill-lock.json"
   fi
-  [[ -f "$skill_lock" ]] || return 0
 
   stale_skills="$(mktemp "${TMPDIR:-/tmp}/codex-deleted-skills-XXXXXX")"
-  if ! python3 "$managed_root/find-deleted-skills.py" "$skill_lock" > "$stale_skills"; then
-    rm -f -- "$stale_skills"
+  skill_inventory="$(mktemp "${TMPDIR:-/tmp}/codex-installed-skills-XXXXXX")"
+  printf '%s\n' "$skill_json" > "$skill_inventory"
+  while IFS='|' read -r kind source selection || [[ -n "$kind$source$selection" ]]; do
+    [[ "$kind" == skill || "$kind" == skill-repo-except ]] || continue
+    managed_sources+=("https://github.com/$source.git")
+  done < "$managed_root/dependencies.conf"
+  if ! python3 "$managed_root/find-deleted-skills.py" \
+    "$skill_lock" "$skill_inventory" "${managed_sources[@]}" > "$stale_skills"; then
+    rm -f -- "$stale_skills" "$skill_inventory"
     return 1
   fi
   while IFS= read -r stale_skill; do
     [[ -n "$stale_skill" ]] || continue
     npx --yes skills@latest remove "$stale_skill" -g -y
   done < "$stale_skills"
-  rm -f -- "$stale_skills"
+  rm -f -- "$stale_skills" "$skill_inventory"
 }
 
 update_or_install_skills() {

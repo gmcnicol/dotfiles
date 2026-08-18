@@ -26,6 +26,15 @@ Do not use documentation lookup for business logic, general programming concepts
 - Use UK English spelling and phrasing.
 - Do not use em dashes in responses, documents, comments, or generated output.
 
+## AWS CDK deployment
+
+Reason: Codex cannot be trusted to deploy production code. A previous deployment was executed without explicit authorisation, without appearing in the stated plan, and without telling the user it would happen. User review and execution are therefore mandatory.
+
+- Never execute `cdk deploy`, `npx cdk deploy`, a package script that wraps CDK deployment, or any equivalent command that deploys a CDK or CloudFormation stack.
+- Never bypass deployment approval or security checks. In particular, never use `--require-approval never` or an equivalent option.
+- When the user requests deployment, prepare the exact deployment command, copy it to the system clipboard with `pbcopy`, and tell the user it is ready. The user alone pastes and executes it.
+- Before copying a deployment command, run applicable local verification and a read-only `cdk diff --no-change-set`. Report unresolved security findings and material IAM or network changes.
+
 ## Deployed artefacts
 
 Treat deployed artefacts as immutable. Database migrations, schemas, seed shapes, and external contract versions are append-only after deployment. Correct deployed behaviour with a forward-only migration, version, or adapter and document the compatibility path.

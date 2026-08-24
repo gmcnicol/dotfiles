@@ -100,6 +100,7 @@ done
 
 assert_root_setting "$test_root/work.toml" 'approval_policy = "on-request"'
 assert_root_setting "$test_root/work.toml" 'check_for_update_on_startup = false'
+assert_root_setting "$test_root/work.toml" 'service_tier = "default"'
 assert_mcp_shape "$test_root/work.toml" 3
 assert_root_setting "$test_root/personal.toml" 'sandbox_mode = "workspace-write"'
 assert_mcp_shape "$test_root/personal.toml" 3

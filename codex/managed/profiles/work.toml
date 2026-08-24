@@ -1,1 +1,2 @@
 # Work-only non-MCP settings belong here.
+service_tier = "default"

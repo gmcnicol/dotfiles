@@ -26,6 +26,15 @@ assert_root_setting() {
   ' "$file" || fail "$file does not contain root setting: $expected"
 }
 
+assert_no_root_setting() {
+  local file="$1" unexpected="$2"
+  ! awk -v unexpected="$unexpected" '
+    /^\[/ { exit }
+    $0 == unexpected { found = 1 }
+    END { exit !found }
+  ' "$file" || fail "$file contains root setting: $unexpected"
+}
+
 assert_mcp_shape() {
   local file="$1" expected_count="$2"
   [[ "$(grep -Ec '^\[mcp_servers\.[^]]+\]$' "$file")" -eq "$expected_count" ]] ||
@@ -102,6 +111,9 @@ assert_root_setting "$test_root/work.toml" 'approval_policy = "on-request"'
 assert_root_setting "$test_root/work.toml" 'check_for_update_on_startup = false'
 assert_root_setting "$test_root/work.toml" 'service_tier = "default"'
 assert_mcp_shape "$test_root/work.toml" 3
+for config in personal omarchy-laptop ubuntu-server; do
+  assert_no_root_setting "$test_root/$config.toml" 'service_tier = "default"'
+done
 assert_root_setting "$test_root/personal.toml" 'sandbox_mode = "workspace-write"'
 assert_mcp_shape "$test_root/personal.toml" 3
 assert_root_setting "$test_root/omarchy-laptop.toml" 'sandbox_mode = "workspace-write"'

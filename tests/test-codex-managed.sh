@@ -84,6 +84,11 @@ printf 'local: true\n' > "$HOME/.docker/mcp/config.yaml"
 "$manager" apply
 [[ -f "$CODEX_HOME/config.toml" ]] || fail "apply did not create config.toml"
 [[ -f "$CODEX_HOME/AGENTS.md" ]] || fail "apply did not create AGENTS.md"
+touch -t 200001010000 "$CODEX_HOME/config.toml"
+touch -r "$CODEX_HOME/config.toml" "$test_root/config-mtime"
+"$manager" apply
+[[ ! "$CODEX_HOME/config.toml" -nt "$test_root/config-mtime" ]] ||
+  fail "unchanged apply rewrote config.toml"
 assert_contains "$CODEX_HOME/AGENTS.md" 'Use the installed `caveman` skill at full intensity by default'
 [[ -d "$CODEX_HOME/plugins/cache/openai-curated-remote/linear" ]] ||
   fail "apply removed a user-owned Linear integration"
@@ -169,6 +174,40 @@ try:
 finally:
     process.kill()
     process.wait()
+
+class FakeStdin:
+    def write(self, _value):
+        pass
+
+    def flush(self):
+        pass
+
+class FakeProcess:
+    stdin = FakeStdin()
+
+    def terminate(self):
+        pass
+
+    def wait(self, timeout=None):
+        pass
+
+def fake_popen(*_args, env, **_kwargs):
+    isolated_home = pathlib.Path(env["CODEX_HOME"])
+    assert isolated_home != pathlib.Path(os.environ["CODEX_HOME"])
+    assert (isolated_home / "config.toml").read_bytes() == pathlib.Path(
+        os.environ["CODEX_HOME"], "config.toml"
+    ).read_bytes()
+    assert (isolated_home / "plugins").is_symlink()
+    return FakeProcess()
+
+def fake_read_response(_process, request_id, timeout=10):
+    if request_id == 1:
+        return {"id": 1}
+    return {"result": {"data": [{"hooks": []}]}}
+
+module.subprocess.Popen = fake_popen
+module.read_response = fake_read_response
+assert module.discover_hooks(str(path.parent)) == []
 PY
 
 export CODEX_MANAGED_MACHINE="ubuntu-server"

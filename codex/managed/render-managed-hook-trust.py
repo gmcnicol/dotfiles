@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 import json
+import os
+import pathlib
 import queue
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 
@@ -50,34 +54,44 @@ def read_response(process, request_id, timeout=10):
 
 
 def discover_hooks(cwd):
-    process = subprocess.Popen(
-        ["codex", "app-server", "--stdio", "-c", 'sandbox_mode="danger-full-access"'],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        text=True,
-    )
-    try:
-        requests = (
-            {"id": 1, "method": "initialize", "params": {"clientInfo": {"name": "codex-sync", "title": "codex-sync", "version": "1"}, "capabilities": None}},
-            {"method": "initialized"},
-            {"id": 2, "method": "hooks/list", "params": {"cwds": [cwd]}},
+    codex_home = pathlib.Path(os.environ.get("CODEX_HOME", pathlib.Path.home() / ".codex"))
+    with tempfile.TemporaryDirectory(prefix="codex-hook-discovery-") as isolated_home:
+        isolated_home = pathlib.Path(isolated_home)
+        if (codex_home / "config.toml").is_file():
+            shutil.copy2(codex_home / "config.toml", isolated_home / "config.toml")
+        if (codex_home / "plugins").is_dir():
+            (isolated_home / "plugins").symlink_to(codex_home / "plugins", target_is_directory=True)
+        environment = os.environ.copy()
+        environment["CODEX_HOME"] = str(isolated_home)
+        process = subprocess.Popen(
+            ["codex", "app-server", "--stdio", "-c", 'sandbox_mode="danger-full-access"'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            env=environment,
         )
-        process.stdin.write(json.dumps(requests[0]) + "\n")
-        process.stdin.flush()
-        read_response(process, 1)
-        for request in requests[1:]:
-            process.stdin.write(json.dumps(request) + "\n")
-        process.stdin.flush()
-        response = read_response(process, 2)
-        return response["result"]["data"][0]["hooks"]
-    finally:
-        process.terminate()
         try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait()
+            requests = (
+                {"id": 1, "method": "initialize", "params": {"clientInfo": {"name": "codex-sync", "title": "codex-sync", "version": "1"}, "capabilities": None}},
+                {"method": "initialized"},
+                {"id": 2, "method": "hooks/list", "params": {"cwds": [cwd]}},
+            )
+            process.stdin.write(json.dumps(requests[0]) + "\n")
+            process.stdin.flush()
+            read_response(process, 1)
+            for request in requests[1:]:
+                process.stdin.write(json.dumps(request) + "\n")
+            process.stdin.flush()
+            response = read_response(process, 2)
+            return response["result"]["data"][0]["hooks"]
+        finally:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
 
 
 def main():

@@ -138,7 +138,8 @@ validate_config() {
 
 backup_and_install() {
   local source="$1" target="$2"
-  if [[ -f "$target" ]] && ! cmp -s "$source" "$target"; then
+  if [[ -f "$target" ]]; then
+    cmp -s "$source" "$target" && return
     cp -p -- "$target" "$target.backup.$(date -u '+%Y%m%dT%H%M%SZ')"
   fi
   install -m 0600 -- "$source" "$target"

@@ -254,9 +254,40 @@ _tmux_resolve_target() {
   print -r -- "$session"$'\t'"$dir"
 }
 
+_tmux_find_session_for_dir() {
+  emulate -L zsh
+  local wanted session dir
+
+  wanted=$(_tmux_abs_dir "$1") || return
+
+  tmux list-sessions -F '#{session_name}'$'\t''#{session_path}' 2>/dev/null | \
+    while IFS=$'\t' read -r session dir; do
+      [[ -z "$session" || -z "$dir" ]] && continue
+      dir=$(_tmux_abs_dir "$dir" 2>/dev/null) || continue
+      if [[ "$dir" == "$wanted" ]]; then
+        print -r -- "$session"
+        return 0
+      fi
+    done
+}
+
+_tmux_unique_session_name() {
+  emulate -L zsh
+  local base="$1" candidate n
+
+  candidate="$base"
+  n=2
+  while tmux has-session -t "=$candidate" 2>/dev/null; do
+    candidate="${base}_${n}"
+    (( n++ ))
+  done
+
+  print -r -- "$candidate"
+}
+
 t() {
   emulate -L zsh
-  local target session dir
+  local target session dir existing
 
   if ! command -v tmux >/dev/null 2>&1; then
     print -u2 "t: tmux is not installed"
@@ -267,9 +298,21 @@ t() {
   session="${target%%$'\t'*}"
   dir="${target#*$'\t'}"
 
-  tmux has-session -t "=$session" 2>/dev/null \
-    || tmux new-session -d -s "$session" -c "$dir" \
-    || return
+  # `t name` still means "attach to that named session". Bare `t` and
+  # `t path` mean "attach to/create the session whose start directory is here".
+  if [[ $# -eq 1 && ! -d "$1" ]] && tmux has-session -t "=$session" 2>/dev/null; then
+    :
+  else
+    existing=$(_tmux_find_session_for_dir "$dir" | sed -n '1p')
+    if [[ -n "$existing" ]]; then
+      session="$existing"
+    else
+      if tmux has-session -t "=$session" 2>/dev/null; then
+        session=$(_tmux_unique_session_name "$session") || return
+      fi
+      tmux new-session -d -s "$session" -c "$dir" || return
+    fi
+  fi
 
   if [[ -n ${TMUX:-} ]]; then
     tmux switch-client -t "=$session"

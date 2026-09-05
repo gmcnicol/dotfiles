@@ -9,7 +9,7 @@ Usage:
                              [--dry-run]
 
 Machine names:
-  macos-work-laptop | macos-personal-macmini | omarchy-laptop | ubuntu-server
+  macos-personal-macmini | omarchy-laptop | ubuntu-server
 
 Default destination:
   gareth@nuc:/home/gareth/src/dotfiles/docker-mcp/<machine>/
@@ -49,7 +49,6 @@ if [[ -z "$machine" ]]; then
     exit 2
   fi
   options=(
-    macos-work-laptop
     macos-personal-macmini
     omarchy-laptop
     ubuntu-server
@@ -65,7 +64,7 @@ if [[ -z "$machine" ]]; then
 fi
 
 case "$machine" in
-  macos-work-laptop|macos-personal-macmini|omarchy-laptop|ubuntu-server) ;;
+  macos-personal-macmini|omarchy-laptop|ubuntu-server) ;;
   *) echo "Unsupported machine name: $machine" >&2; exit 2 ;;
 esac
 

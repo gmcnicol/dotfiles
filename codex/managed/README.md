@@ -17,10 +17,10 @@ codex-sync doctor
 
 The shared `cx` shell function installs `@openai/codex@latest` when Codex is missing and applies managed configuration before every launch. Once per 24 hours, it checks managed dependencies and updates only missing or stale entries. The dotfiles installer records its completed update, so the next `cx` launch does not repeat it. Failed checks are reported and throttled for the same period, but an existing Codex installation still launches. Set `CX_SYNC_ALWAYS=1` for a forced check, or run `codex-sync update` directly at any time. Codex then starts with `--yolo`.
 
-`apply` concatenates three non-overlapping TOML layers and generates the Docker MCP Gateway entry from server manifests:
+`apply` concatenates the shared, personal, and machine-specific TOML layers and generates the Docker MCP Gateway entry from server manifests:
 
 1. `shared/config.toml`
-2. `profiles/work.toml` or `profiles/personal.toml`
+2. `profiles/personal.toml`
 3. `machines/<machine>.toml`
 4. `docker-mcp/shared.servers`
 
@@ -57,7 +57,7 @@ The updater checks every globally locked GitHub skill against its recorded upstr
 
 ## Tests
 
-`tests/test-codex-managed.sh` exercises real rendering plus failure paths for dependency input, clean Codex installation, and launcher availability. `tests/test-codex-managed-containers.sh` runs the full installer and managed update filesystem flow for Ubuntu and Omarchy profiles in Ubuntu and Arch containers. It exercises both macOS profiles with Bash 3.2 plus simulated Darwin and Docker Desktop commands. Network installers and Docker are replaced with deterministic local commands; the host suite tests the Python helpers. Docker cannot reproduce a real macOS kernel or BSD userland, so final native macOS validation still runs on a Mac.
+`tests/test-codex-managed.sh` exercises real rendering plus failure paths for dependency input, clean Codex installation, and launcher availability. `tests/test-codex-managed-containers.sh` runs the full installer and managed update filesystem flow for Ubuntu and Omarchy profiles in Ubuntu and Arch containers. It exercises the macOS environment with Bash 3.2 plus simulated Darwin and Docker Desktop commands. Network installers and Docker are replaced with deterministic local commands; the host suite tests the Python helpers. Docker cannot reproduce a real macOS kernel or BSD userland, so final native macOS validation still runs on a Mac.
 
 ## Secrets
 
@@ -69,6 +69,6 @@ Docker's `default` profile owns server configuration and authentication. Configu
 
 Track only authored server selections, catalogues, registry selections, profiles, and tool policies. Do not track `mcp-toolkit.db`, migration locks, generated catalogues, or backup files.
 
-The central Docker MCP set is Playwright. `codex-sync update` adds any missing centrally managed servers to Docker's `default` profile without removing, replacing, filtering, or reconfiguring servers already there. Docker MCP has no work/personal layering. Codex connects with `docker mcp gateway run --profile default`, so Docker Desktop's local profile, tool allow-list, and secrets remain authoritative. GitHub is supplied through the shared OpenAI-curated GitHub plugin.
+The central Docker MCP set is Playwright. `codex-sync update` adds any missing centrally managed servers to Docker's `default` profile without removing, replacing, filtering, or reconfiguring servers already there. Docker MCP has no machine-specific layering. Codex connects with `docker mcp gateway run --profile default`, so Docker Desktop's local profile, tool allow-list, and secrets remain authoritative. GitHub is supplied through the shared OpenAI-curated GitHub plugin.
 
 Docker Desktop 4.59 or later supplies the MCP Toolkit on macOS when the feature is enabled. Docker Engine hosts need the `docker-mcp` CLI plugin installed under `~/.docker/cli-plugins`. `codex-sync doctor` reports whether the gateway plugin is available.

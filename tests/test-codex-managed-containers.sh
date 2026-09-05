@@ -159,7 +159,7 @@ EOF
     arch) machines=(omarchy-laptop) ;;
     macos)
       export MOCK_UNAME=Darwin
-      machines=(macos-work-laptop macos-personal-macmini)
+      machines=(macos-personal-macmini)
       ;;
     *)
       echo "Unknown container case: $CODEX_CONTAINER_CASE" >&2

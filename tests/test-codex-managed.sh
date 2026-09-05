@@ -65,7 +65,7 @@ fi
 assert_contains "$test_root/missing-machine.txt" \
   'CODEX_MANAGED_MACHINE is required in non-interactive use.'
 
-export CODEX_MANAGED_MACHINE="macos-work-laptop"
+export CODEX_MANAGED_MACHINE="macos-personal-macmini"
 
 mkdir -p \
   "$CODEX_HOME/plugins/cache/openai-curated-remote/linear" \
@@ -74,10 +74,10 @@ touch \
   "$CODEX_HOME/plugins/cache/openai-curated-remote/linear/cache-entry" \
   "$CODEX_HOME/.tmp/plugins/plugins/obsidian/cache-entry"
 
-"$manager" apply --dry-run > "$test_root/work.toml"
-assert_contains "$test_root/work.toml" '[mcp_servers.MCP_DOCKER]'
-assert_contains "$test_root/work.toml" '"--profile", "default"'
-assert_contains "$test_root/work.toml" '[plugins."ponytail@ponytail"]'
+"$manager" apply --dry-run > "$test_root/personal.toml"
+assert_contains "$test_root/personal.toml" '[mcp_servers.MCP_DOCKER]'
+assert_contains "$test_root/personal.toml" '"--profile", "default"'
+assert_contains "$test_root/personal.toml" '[plugins."ponytail@ponytail"]'
 
 mkdir -p "$HOME/.docker/mcp"
 printf 'local: true\n' > "$HOME/.docker/mcp/config.yaml"
@@ -96,26 +96,19 @@ assert_contains "$CODEX_HOME/AGENTS.md" 'Use the installed `caveman` skill at fu
   fail "apply removed a user-owned Obsidian integration"
 assert_contains "$HOME/.docker/mcp/config.yaml" 'local: true'
 
-clean_work_home="$test_root/clean-work-home"
-mkdir -p "$clean_work_home"
-HOME="$clean_work_home" CODEX_HOME="$test_root/clean-work-codex" \
-  CODEX_MANAGED_MACHINE="macos-work-laptop" "$manager" apply >/dev/null
-[[ -f "$test_root/clean-work-codex/config.toml" ]] ||
-  fail "clean work apply did not install config.toml"
-[[ ! -e "$clean_work_home/.docker/mcp/codex-managed-config.yaml" ]] ||
+clean_personal_home="$test_root/clean-personal-home"
+mkdir -p "$clean_personal_home"
+HOME="$clean_personal_home" CODEX_HOME="$test_root/clean-personal-codex" \
+  CODEX_MANAGED_MACHINE="macos-personal-macmini" "$manager" apply >/dev/null
+[[ -f "$test_root/clean-personal-codex/config.toml" ]] ||
+  fail "clean personal apply did not install config.toml"
+[[ ! -e "$clean_personal_home/.docker/mcp/codex-managed-config.yaml" ]] ||
   fail "apply created a competing Docker MCP configuration"
-
-export CODEX_MANAGED_MACHINE="macos-personal-macmini"
-"$manager" apply --dry-run > "$test_root/personal.toml"
 
 for machine in omarchy-laptop ubuntu-server; do
   CODEX_MANAGED_MACHINE="$machine" "$manager" apply --dry-run > "$test_root/$machine.toml"
 done
 
-assert_root_setting "$test_root/work.toml" 'approval_policy = "on-request"'
-assert_root_setting "$test_root/work.toml" 'check_for_update_on_startup = false'
-assert_root_setting "$test_root/work.toml" 'service_tier = "default"'
-assert_mcp_shape "$test_root/work.toml" 3
 for config in personal omarchy-laptop ubuntu-server; do
   assert_no_root_setting "$test_root/$config.toml" 'service_tier = "default"'
 done

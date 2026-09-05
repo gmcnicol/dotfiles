@@ -126,7 +126,7 @@ append_once() {
 select_codex_machine() {
   if [ -n "${CODEX_MANAGED_MACHINE:-}" ]; then
     case "$CODEX_MANAGED_MACHINE" in
-      macos-work-laptop|macos-personal-macmini|omarchy-laptop|ubuntu-server)
+      macos-personal-macmini|omarchy-laptop|ubuntu-server)
         printf '%s\n' "$CODEX_MANAGED_MACHINE"
         return
         ;;
@@ -145,17 +145,15 @@ select_codex_machine() {
   while :; do
     printf '%s\n' \
       'Select this Codex machine:' \
-      '  1) macos-work-laptop' \
-      '  2) macos-personal-macmini' \
-      '  3) omarchy-laptop' \
-      '  4) ubuntu-server' >&2
+      '  1) macos-personal-macmini' \
+      '  2) omarchy-laptop' \
+      '  3) ubuntu-server' >&2
     printf 'Selection: ' >&2
     IFS= read -r choice
     case "$choice" in
-      1|macos-work-laptop) printf '%s\n' macos-work-laptop; return ;;
-      2|macos-personal-macmini) printf '%s\n' macos-personal-macmini; return ;;
-      3|omarchy-laptop) printf '%s\n' omarchy-laptop; return ;;
-      4|ubuntu-server) printf '%s\n' ubuntu-server; return ;;
+      1|macos-personal-macmini) printf '%s\n' macos-personal-macmini; return ;;
+      2|omarchy-laptop) printf '%s\n' omarchy-laptop; return ;;
+      3|ubuntu-server) printf '%s\n' ubuntu-server; return ;;
       *) printf 'Invalid selection.\n' >&2 ;;
     esac
   done

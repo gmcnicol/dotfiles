@@ -11,7 +11,7 @@ Usage:
                      [--remote-dir DIRECTORY] [--dry-run]
 
 Machine names:
-  macos-work-laptop | macos-personal-macmini | omarchy-laptop | ubuntu-server
+  macos-personal-macmini | omarchy-laptop | ubuntu-server
 
 Example:
   ./collect-configs.sh --machine ubuntu-server --remote gareth@nuc
@@ -45,7 +45,7 @@ if [[ -z "$machine" ]]; then
 fi
 
 case "$machine" in
-  macos-work-laptop|macos-personal-macmini|omarchy-laptop|ubuntu-server) ;;
+  macos-personal-macmini|omarchy-laptop|ubuntu-server) ;;
   *) echo "Unsupported machine name: $machine" >&2; exit 2 ;;
 esac
 

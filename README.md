@@ -2,7 +2,7 @@
 
 ## Managed Codex configuration
 
-The canonical shared, work, personal, and machine-specific Codex configuration lives in [`codex/managed`](codex/managed). Use `codex-sync` to apply, update, or validate Codex, shared skills, Ponytail hooks, MCP servers, and profile-specific integrations.
+The canonical shared, personal, and machine-specific Codex configuration lives in [`codex/managed`](codex/managed). Use `codex-sync` to apply, update, or validate Codex, shared skills, Ponytail hooks, MCP servers, and profile-specific integrations.
 
 `codex-sync update` reconciles the complete current Matt Pocock skill suite, excluding `obsidian-vault`, so newly added upstream skills arrive without maintaining a static allow-list. Managed dependencies are updated in place; user-installed Codex apps, plugins, marketplaces, and Docker MCP servers are preserved.
 
@@ -10,7 +10,7 @@ The shared skill baseline installs the maintained `juliusbrussee/caveman` skill 
 
 ## Local configuration snapshots
 
-Temporary, local-only staging area for collecting configuration from four machines before comparing and consolidating it.
+Temporary, local-only staging area for collecting configuration from three machines before comparing and consolidating it.
 
 ## Layout
 
@@ -19,7 +19,6 @@ Temporary, local-only staging area for collecting configuration from four machin
 
 Machine folders:
 
-- `macos-work-laptop`
 - `macos-personal-macmini`
 - `omarchy-laptop`
 - `ubuntu-server`

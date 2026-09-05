@@ -22,7 +22,7 @@ Commands:
 
 Set CODEX_MANAGED_MACHINE for non-interactive use. If unset in a terminal,
 codex-sync asks which machine it is running on. Supported values:
-  macos-work-laptop | macos-personal-macmini | omarchy-laptop | ubuntu-server
+  macos-personal-macmini | omarchy-laptop | ubuntu-server
 EOF
 }
 
@@ -39,7 +39,6 @@ detect_machine() {
 
   local choice
   local options=(
-    macos-work-laptop
     macos-personal-macmini
     omarchy-laptop
     ubuntu-server
@@ -58,7 +57,6 @@ detect_machine() {
 
 profile_for_machine() {
   case "$1" in
-    macos-work-laptop) printf '%s\n' work ;;
     macos-personal-macmini|omarchy-laptop|ubuntu-server) printf '%s\n' personal ;;
     *) echo "Unsupported machine: $1" >&2; return 1 ;;
   esac
@@ -81,12 +79,7 @@ docker_servers() {
 
 render_config() {
   local machine="$1" profile="$2" output="$3"
-  local docker_timeout
-  if [[ "$profile" == work ]]; then
-    docker_timeout=300
-  else
-    docker_timeout=60
-  fi
+  local docker_timeout=60
   local fragments=(
     "$managed_root/profiles/$profile.toml"
     "$managed_root/shared/config.toml"

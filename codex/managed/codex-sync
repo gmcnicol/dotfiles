@@ -469,9 +469,12 @@ reconcile_docker_profile() {
   local profile_id=default
 
   if (( dry_run )); then
+    echo "would pull the latest official Docker MCP catalog"
     echo "would add missing managed Docker MCP servers to profile $profile_id without removing local servers"
     return
   fi
+
+  docker mcp catalog pull mcp/docker-mcp-catalog:latest
 
   if ! docker mcp profile list | awk 'NR > 2 { print $1 }' | grep -Fqx "$profile_id"; then
     docker mcp profile create --id "$profile_id" --name "Default Profile"

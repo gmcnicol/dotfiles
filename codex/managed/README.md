@@ -69,6 +69,6 @@ Docker's `default` profile owns server configuration and authentication. Configu
 
 Track only authored server selections, catalogues, registry selections, profiles, and tool policies. Do not track `mcp-toolkit.db`, migration locks, generated catalogues, or backup files.
 
-The central Docker MCP set is Playwright. `codex-sync update` adds any missing centrally managed servers to Docker's `default` profile without removing, replacing, filtering, or reconfiguring servers already there. Docker MCP has no machine-specific layering. Codex connects with `docker mcp gateway run --profile default`, so Docker Desktop's local profile, tool allow-list, and secrets remain authoritative. GitHub is supplied through the shared OpenAI-curated GitHub plugin.
+The central Docker MCP set is Playwright. `codex-sync update` pulls Docker's latest official MCP catalog, then adds any missing centrally managed servers to Docker's `default` profile without removing, replacing, filtering, or reconfiguring servers already there. Docker MCP has no machine-specific layering. Codex connects with `docker mcp gateway run --profile default`, so Docker Desktop's local profile, tool allow-list, and secrets remain authoritative. GitHub is supplied through the shared OpenAI-curated GitHub plugin.
 
 Docker Desktop 4.59 or later supplies the MCP Toolkit on macOS when the feature is enabled. Docker Engine hosts need the `docker-mcp` CLI plugin installed under `~/.docker/cli-plugins`. `codex-sync doctor` reports whether the gateway plugin is available.

@@ -449,6 +449,46 @@ for invalid_inventory in failed empty whitespace; do
   fi
 done
 
+docker_profile_log="$test_root/docker-profile.log"
+DOCKER_PROFILE_LOG="$docker_profile_log" MANAGER="$manager" MANAGED_ROOT="$repo_root/codex/managed" bash -c '
+  set -euo pipefail
+  dry_run=0
+  managed_root="$MANAGED_ROOT"
+  eval "$(sed -n "/^docker_servers() {/,/^}/p" "$MANAGER")"
+  eval "$(sed -n "/^reconcile_docker_profile() {/,/^}/p" "$MANAGER")"
+  catalog_pulled=0
+  docker() {
+    printf "docker %s\\n" "$*" >> "$DOCKER_PROFILE_LOG"
+    case "$*" in
+      "mcp catalog list")
+        printf "%s\\n" \
+          "Reference | Digest | Title" \
+          "mcp/community-registry:latest | abc123 | MCP Community Registry"
+        ;;
+      "mcp catalog pull mcp/docker-mcp-catalog:latest")
+        catalog_pulled=1
+        ;;
+      "mcp profile list")
+        printf "%s\\n" "ID Name" "---- ----" "default Default Profile"
+        ;;
+      "mcp profile server ls --filter profile=default")
+        printf "%s\\n" "No profiles found"
+        ;;
+      "mcp profile server add default --server catalog://mcp/docker-mcp-catalog/playwright")
+        if (( ! catalog_pulled )); then
+          echo "invalid server value: catalog mcp/docker-mcp-catalog:latest not found" >&2
+          return 1
+        fi
+        ;;
+    esac
+  }
+  reconcile_docker_profile
+'
+assert_contains "$docker_profile_log" \
+  'docker mcp catalog pull mcp/docker-mcp-catalog:latest'
+assert_contains "$docker_profile_log" \
+  'docker mcp profile server add default --server catalog://mcp/docker-mcp-catalog/playwright'
+
 install_codex_log="$test_root/install-codex.log"
 INSTALL_CODEX_LOG="$install_codex_log" MANAGER="$manager" bash -c '
   set -euo pipefail

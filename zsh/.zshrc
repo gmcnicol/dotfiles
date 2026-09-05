@@ -12,6 +12,8 @@ export EDITOR='nvim'
 
 typeset -U path PATH fpath FPATH
 
+[[ -r "$HOME/.atuin/bin/env" ]] && . "$HOME/.atuin/bin/env"
+
 is_codex_shell=false
 if [[ -n ${CODEX_THREAD_ID:-} || -n ${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-} ]]; then
   is_codex_shell=true
@@ -120,11 +122,12 @@ else
       done
     }
 
+    _load_fzf_zsh_integration
+    command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh)"
+
     _defer_cli_init() {
       command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
-      command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh)"
       command -v ngrok >/dev/null 2>&1 && eval "$(ngrok completion)"
-      _load_fzf_zsh_integration
       add-zsh-hook -d preexec _defer_cli_init
     }
     add-zsh-hook preexec _defer_cli_init
@@ -464,7 +467,6 @@ sdk() {
   fi
 }
 
-[[ -r "$HOME/.atuin/bin/env" ]] && . "$HOME/.atuin/bin/env"
 [[ -r "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
 [[ -r "$HOME/.local/share/../bin/env" ]] && . "$HOME/.local/share/../bin/env"
 

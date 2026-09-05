@@ -18,6 +18,7 @@ Installs this repo into the expected config locations:
   ~/.codex/AGENTS.md       from shared Codex instructions
   ~/.config/codex/managed-machine for cx's machine-specific sync calls
   ~/.local/bin/codex-sync -> codex/managed/codex-sync
+  ~/.local/bin/do_update  -> scripts/do_update, on apt-based systems
 
 It also creates ~/.zshrc.local and appends a source line for the shared zsh
 config to ~/.zshrc.
@@ -188,6 +189,12 @@ codex_machine=$(select_codex_machine)
 printf '%s\n' "$codex_machine" > "$HOME/.config/codex/managed-machine"
 chmod 600 "$HOME/.config/codex/managed-machine"
 link_path "$repo_dir/codex/managed/codex-sync" "$HOME/.local/bin/codex-sync"
+
+if command -v apt-get >/dev/null 2>&1; then
+  link_path "$repo_dir/scripts/do_update" "$HOME/.local/bin/do_update"
+else
+  info "Skipping do_update; apt package manager not found"
+fi
 
 if ! command -v codex >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   npm install -g --loglevel=error @openai/codex@latest

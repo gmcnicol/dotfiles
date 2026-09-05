@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: do_update [--include-tailscale]
+
+Update apt packages. Tailscale is held during the update by default so an SSH
+session is not interrupted. Pass --include-tailscale to update it as well.
+EOF
+}
+
+include_tailscale=false
+
+while (($#)); do
+  case "$1" in
+    --include-tailscale)
+      include_tailscale=true
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf 'Unknown option: %s\n\n' "$1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+for command in apt-cache apt-get apt-mark dpkg dpkg-query sudo; do
+  if ! command -v "$command" >/dev/null 2>&1; then
+    printf 'Required command not found: %s\n' "$command" >&2
+    exit 1
+  fi
+done
+
+# Authenticate before making any changes, rather than failing partway through.
+sudo -v
+
+tailscale_held_by_script=false
+
+restore_tailscale_hold() {
+  local status=$?
+
+  if [[ "$tailscale_held_by_script" == true ]]; then
+    if ! sudo apt-mark unhold tailscale >/dev/null; then
+      printf 'Warning: failed to remove the temporary hold on tailscale.\n' >&2
+      ((status == 0)) && status=1
+    fi
+  fi
+
+  trap - EXIT
+  exit "$status"
+}
+
+trap restore_tailscale_hold EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+apt_options=(-o DPkg::Lock::Timeout=300)
+apt_quiet_options=(-qq -o Dpkg::Use-Pty=0)
+
+sudo apt-get "${apt_options[@]}" "${apt_quiet_options[@]}" update
+
+if [[ "$include_tailscale" == false ]] &&
+  [[ "$(dpkg-query -W -f='${Status}' tailscale 2>/dev/null || true)" == 'install ok installed' ]]; then
+  tailscale_installed_version="$(dpkg-query -W -f='${Version}' tailscale)"
+  tailscale_candidate_version="$(LC_ALL=C apt-cache policy tailscale | awk '/Candidate:/ { print $2 }')"
+
+  if ! apt-mark showhold | grep -Fxq tailscale; then
+    sudo apt-mark hold tailscale >/dev/null
+    tailscale_held_by_script=true
+  fi
+
+  if [[ -n "$tailscale_candidate_version" ]] &&
+    [[ "$tailscale_candidate_version" != '(none)' ]] &&
+    dpkg --compare-versions "$tailscale_candidate_version" gt "$tailscale_installed_version"; then
+    printf 'Tailscale update available; skipped (use --include-tailscale).\n'
+  fi
+fi
+
+# Simulate the same operation first so apt-get upgrade is only invoked when it
+# has work to do. --with-new-pkgs matches the behaviour of `apt upgrade`.
+simulation="$(LC_ALL=C apt-get "${apt_options[@]}" --simulate upgrade --with-new-pkgs)"
+mapfile -t upgrades < <(awk '/^Inst / { print $2 }' <<<"$simulation")
+
+if ((${#upgrades[@]})); then
+  printf 'Upgrading %d package(s): %s\n' "${#upgrades[@]}" "${upgrades[*]}"
+  sudo apt-get "${apt_options[@]}" "${apt_quiet_options[@]}" upgrade --with-new-pkgs -y
+else
+  printf 'No package upgrades available.\n'
+fi
+
+sudo apt-get "${apt_options[@]}" "${apt_quiet_options[@]}" autoremove -y
+sudo apt-get "${apt_options[@]}" "${apt_quiet_options[@]}" autoclean
